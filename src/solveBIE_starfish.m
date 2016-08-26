@@ -77,8 +77,10 @@ disp('Compute estimates')
 errest = error_estL(dom.z,dom.tau(dom.panels),dom.zDrops,dom.Npanels, ...
     mu_lapl,dom.wDrops,dom.taup(dom.tpar)); 
 
-savestr = ['../results/errorest_' res_domain];
-save(savestr,'errest')
+if savedata
+    savestr = ['../results/errorest_' res_domain];
+    save(savestr,'errest')
+end
 res.errest = errest;
 
 %

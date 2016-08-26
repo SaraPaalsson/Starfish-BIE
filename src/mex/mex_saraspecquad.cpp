@@ -1,7 +1,7 @@
 #include <string.h>
 #include "mex.h"
 #include "Complex.h"
-#include "omp.h"
+//#include "omp.h"
 #include <stdio.h>
 
 const double pi = 3.1415926535897932385;
@@ -150,7 +150,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
     //The main loop. Check all drop and solid points against the drop
     //panels, and decide if special quadrature is needed. Apply the
     //special quadrature if so.
-#pragma omp parallel for
+//#pragma omp parallel for
     for(int i = 0;i<N;i++) {
         Complex nzpan[16],tz[16],tzp[16],tf[16];
         Complex tz32[32],tzp32[32],tf32[32];
