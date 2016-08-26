@@ -10,8 +10,11 @@
 #include <iostream>
 #include <math.h>
 
+/*
 #undef _mm_shuffle_pd
 #define _mm_shuffle_pd(__A, __B, __C) (static_cast<__m128d>(__builtin_ia32_shufpd (static_cast<__v2df>(__A), static_cast<__v2df>(__B), (__C))))
+*/
+
 
 class Complex {
 	friend std::ostream& operator<<(std::ostream& os,const Complex& c);
