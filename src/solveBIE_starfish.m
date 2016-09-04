@@ -111,6 +111,29 @@ if savedata
 end
 res.error = error;
 
+%%
+% Write data to file
+varstr = {'Npanels','panels','zDropsRE','zDropsIM','zpDropsRE','zpDropsIM', ...
+    'zppDropsRE','zppDropsIM','wDrops','tpar','zDomRE','zDomIM','mu','unorm','uspec','ucorrect'};
+dataStruct.Npanels = dom.Npanels; dataStruct.panels = transpose(dom.panels); 
+dataStruct.zDropsRE = real(transpose(dom.zDrops)); 
+dataStruct.zDropsIM = imag(transpose(dom.zDrops)); 
+dataStruct.zpDropsRE = real(transpose(dom.taup(dom.tpar)));
+dataStruct.zpDropsIM = imag(transpose(dom.taup(dom.tpar)));
+dataStruct.zppDropsRE = real(transpose(dom.taupp(dom.tpar))); 
+dataStruct.zppDropsIM = imag(transpose(dom.taupp(dom.tpar))); 
+dataStruct.wDrops = transpose(dom.wDrops); 
+dataStruct.tpar = transpose(dom.tpar); 
+dataStruct.zDomRE = real(transpose(dom.z));
+dataStruct.zDomIM = imag(transpose(dom.z));
+dataStruct.mu = transpose(mu_lapl); 
+dataStruct.unorm = transpose(u); 
+dataStruct.uspec = transpose(uspec); 
+dataStruct.ucorrect = transpose(u_known);
+writeDataToFile(dataStruct, varstr, 'laplData.txt')
+
+%%
+
 %----------------------------------------------------
 % Plot
 disp('Plot!')
