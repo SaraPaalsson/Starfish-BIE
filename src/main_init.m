@@ -5,6 +5,8 @@ if strcmp(res_interf,'low')
     Npanels = 35;
 elseif strcmp(res_interf,'high')
     Npanels = 70;
+elseif strcmp(res_interf,'superlow')
+    Npanels = 10;
 end
 N = Npanels*16;
 
@@ -31,6 +33,7 @@ elseif strcmp(res_domain,'high')
     nbrR = 2000;
     nbrT = 2500;
 end
+
 
 % Where to go from coarse to fine grid
 R1 = 0.4; 

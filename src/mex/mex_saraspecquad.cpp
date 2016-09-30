@@ -163,9 +163,13 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
             Complex mid = Complex((peDrop_re[k+1]+peDrop_re[k])/2,(peDrop_im[k+1]+peDrop_im[k])/2);
             Complex len = Complex(peDrop_re[k+1]-peDrop_re[k],peDrop_im[k+1]-peDrop_im[k]);
             
+            
             //Is target point zk close enough to panel k to warrant further tests?
             if (abs(zk-mid) < abs(len)) {
                 
+                if (i==199) {
+                    printf("i=199, k=%d \n",k);
+                }
                 
                 Complex nz = 2*(zk-mid)/len;
                 Complex oldsum = 0,testsum = 0;
@@ -210,6 +214,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
                                lg2 += pi*_i;
                             }
                         }
+
+
                     }
                     if(imag(nz) < 0) {
                         //Below the real axis, check if nz is enclosed
@@ -221,6 +227,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
                                 break;
                             }
                         }
+
+
                         if(furthercheck) {
                             for(int j = 0;j<16;j++) {
                                 tmpT[j] = real(nzpan[j]);
@@ -260,8 +268,6 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
                 }
                 
 
-
-                
                 //Does standard quadrature suffice? In that case, we
                 //need not do anything.
                 if(abs(p32[0]-testsum) > 1e-13) {
@@ -273,6 +279,14 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
                     IPmultR(tf,tf32);
                     IPmultR(tz,tz32);
                     IPmultR(tzp,tzp32);
+
+
+                        if (i==131 && k==0) {
+                            for (int j=0; j<32; j++) {
+                                printf("tf32[%d] = %f\n",j,real(tf32[j]));
+                            }
+                        }
+
                     double plen = tW[0]/W16[0];
                     Complex o32sum = 0;
                     for(int j = 0;j<32;j++) {
@@ -280,23 +294,34 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
                         orig32[j] = tW32[j]/(tz32[j]-zk);
                         o32sum += tzp32[j]*orig32[j];
                     }
-       
-                    
                     
                     if(abs(o32sum-p32[0]) < 1e-13) {
                         //32 point quadrature suffices
+
                         Complex newsum = 0;
                         for(int j = 0;j<32;j++) {
                             newsum += tW32[j]*tf32[j]*imag(tzp32[j]/(tz32[j]-zk))/2/pi;
                         }
+
                         out_us_re[i] += real(newsum-oldsum);
-                        
-                        
+                      
                     }else{
                         //Straight up 32 point quadrature doesn't suffice.
                         //We use interpolatory quadrature instead.
-                        
+
+/*
+                        if (i==131) {
+                        printf("OW: k=%d,e=%f\n",k,abs(o32sum-p32[0])*1e13);
+                        }
+  */                      
                         IPmultR(nzpan,nzpan32);
+                        /*
+                        if (i==131) {
+                            for (int j=0; j<32; j++) {
+                                printf("nzpan32[%d] = %f\n",j,imag(nzpan32[j]));
+                            }
+                        }
+                        */
                         double sign = -1;
                         //Compute the analytic values of the integral of
                         //1/(tau-z) multiplied by monomials.
@@ -307,6 +332,17 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[]) {
                         
                         //Solve the vandermonde systems to get the quadrature weights.
                         vandernewton(nzpan32,p32,32);
+
+                        if (i==131) {
+                            for (int j=0; j<32; j++) {
+                                printf("nzpan32[%d] = %f\n",j,real(nzpan32[j]));
+                            }
+                            for (int j=0; j<16; j++) {
+                                printf("nzpan[%d] = %f\n",j,
+                                    real(nzpan[j]));
+                            }
+                        }
+
                         
                         //Compute the correct value of the stokeslet
                         //integral and subtract the old, inaccurate value.

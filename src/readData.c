@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <complex.h>
 
 /* 
 Read in text file as input for testing. Input written in MATLAB. 
@@ -21,24 +21,10 @@ int main()
     double *zDropsRE, *zDropsIM, *zpDropsRE, *zpDropsIM, *zppDropsRE, *zppDropsIM;
     double *panels, *wDrops, *tpar, *zDomRE, *zDomIM, *mu, *unorm, *uspec, *ucorrect;
     double *Npanels;
+    double complex *zDrops, *zpDrops, *zppDrops, *zDom;
+
 
     double tmp; 
-
-/*
-	ptr_file = fopen("test.txt", "r");
-	param = 1;
-	size = 3;
-*/
-/*
-    ptr_file = fopen("test2.txt","r");
-    param = 2;
-    size = 4;
-*/
-/* 
-    ptr_file =fopen("test3.txt", "r");
-    param = 3;
-    size = 5;
-*/
 
     ptr_file = fopen("laplData.txt","r");
     param = 16;
@@ -55,7 +41,7 @@ int main()
 				fscanf(ptr_file, "%d",&sizevec[j]);
 			}
 		}	
-		else if (i == 2) {
+		if (i == 2) {
 			Npanels = malloc(sizevec[i-2]*sizeof(double));
 			for (j = 0; j < sizevec[i-2]; j++) {
 				fscanf(ptr_file, "%lf", &Npanels[j]);
@@ -156,6 +142,13 @@ int main()
 		}
 	}
 	
+
+	zDrops = malloc(sizevec[2]*sizeof(complex double));
+	for (i=0; i<sizevec[2]; i++) {
+		zDrops[i] = zDropsRE[i] + zDropsIM[i]*I;
+	}
+
+
 	for (i=0;i<param;i++) {
 		printf("Size is %d\n",sizevec[i]);
 	}

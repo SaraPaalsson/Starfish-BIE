@@ -52,12 +52,12 @@ if savedata
     save(savestr,'u')
 end
 res.u = u;
-
+%%
 % disp('Compute u special quadrature')
-% tic
+% % tic
 % [uspec] = specquad_lapl(u, mu_lapl, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
 %     dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32);
-% toc
+% % toc
 disp('Compute u special quadrature MEX')
 tic
 [uspec,~] = mex_saraspecquad(u, mu_lapl, dom.tau(dom.panels), dom.zDrops, dom.taup(dom.tpar), dom.wDrops, dom.z);
@@ -68,7 +68,7 @@ if savedata
     save(savestr,'uspec')
 end
 res.uspec = uspec;
-
+%%
 %----------------------------------------------------
 % Compute error estimates
 
@@ -113,9 +113,11 @@ res.error = error;
 
 %%
 % Write data to file
-varstr = {'Npanels','panels','zDropsRE','zDropsIM','zpDropsRE','zpDropsIM', ...
+varstr = {'Npanels','panelsRE','panelsIM','zDropsRE','zDropsIM','zpDropsRE','zpDropsIM', ...
     'zppDropsRE','zppDropsIM','wDrops','tpar','zDomRE','zDomIM','mu','unorm','uspec','ucorrect'};
-dataStruct.Npanels = dom.Npanels; dataStruct.panels = transpose(dom.panels); 
+dataStruct.Npanels = dom.Npanels; 
+dataStruct.panelsRE = real(transpose(dom.tau(dom.panels)));
+dataStruct.panelsIM = imag(transpose(dom.tau(dom.panels)));
 dataStruct.zDropsRE = real(transpose(dom.zDrops)); 
 dataStruct.zDropsIM = imag(transpose(dom.zDrops)); 
 dataStruct.zpDropsRE = real(transpose(dom.taup(dom.tpar)));
@@ -130,7 +132,7 @@ dataStruct.mu = transpose(mu_lapl);
 dataStruct.unorm = transpose(u); 
 dataStruct.uspec = transpose(uspec); 
 dataStruct.ucorrect = transpose(u_known);
-writeDataToFile(dataStruct, varstr, 'laplData.txt')
+writeDataToFile(dataStruct, varstr, 'laplDataLOW.txt')
 
 %%
 
