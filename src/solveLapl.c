@@ -28,7 +28,7 @@ int main(void){
     double *testzRE, *testzIM, aRE, aIM, bRE, bIM, *errorvec;
     double complex *testz, a, b, tmpAB;
     double umax, errormax;
-    char fileData[] = "laplData.txt";
+    char fileData[] = "laplDataLOW.txt";
     char *fileDataPtr; 
     fileDataPtr = fileData; 
 /*
@@ -50,6 +50,7 @@ Read in sizes of variables
 			fgets(buf,100000,ptr_file);
 		}
 	}
+	
 	fclose(ptr_file);
 
 /*
@@ -108,20 +109,6 @@ Correct computed solution using special quadrature where needed.
 		}
 	}
 	printf("Max error: %12.16f \n", errormax);
-
-
-/*
-	for (i=131; i<132; i++) {
-		printf("Obtained unorm[%d]=%12.16f\n",i,unorm[i]);
-		printf("Computed u[%d]=%12.16f\n",i,u_standardq[i]);
-		printf("Uknown[%d] = %12.16f\n",i, ucorrect[i]);
-		printf("uspec[%d] =%12.16f\n", i, uspec[i]);
-		printf("Computed u_specq[%d] = %12.16f\n",i,u_specq[i] );
-		printf("error[%d] = %12.8f\n",i, errorvec[i] );
-	}
-*/
-
-
 
 	return 0;
 }
