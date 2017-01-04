@@ -10,6 +10,8 @@ void normalquadlapl(double *u, double *mu, double complex *z, double complex *zD
 
 void specialquadlapl(double *u_specq, double *u_standardq, double *mu, double complex *zDom, double complex *zDrops, double complex *zpDrops, double *wDrops, double complex *panels, int N, int Npanels);
 
+void analyticulapl(double *u_analytic,double complex *zDom, double complex z1, double complex z2, double complex z3, int N);
+
 /* 
 Compute solution to Laplace's equation with normal and special quadrature given discretization data and complex density as given in laplData.txt.
 */
@@ -23,7 +25,8 @@ int main(void){
 	unsigned int i,j;
     double complex *zDrops, *zpDrops, *zppDrops, *zDom, *panels;
     double *wDrops, *tpar, *mu, *unorm, *uspec, *ucorrect;
-    double *u_standardq, *u_specq;
+    double *u_standardq, *u_specq, *u_analytic;
+    double complex zsrc1,zsrc2,zsrc3;
 
     double *testzRE, *testzIM, aRE, aIM, bRE, bIM, *errorvec;
     double complex *testz, a, b, tmpAB;
@@ -74,12 +77,25 @@ Read in variables from laplData.txt
 */
 	laplreaddata(sizevec, Npanels, panels, zDrops, zpDrops, zppDrops, wDrops, tpar, zDom, mu, unorm, uspec, ucorrect, fileDataPtr);
 
+/* 
+Compute analytical solution of u
+*/
+	u_analytic = malloc(sizevec[11]*sizeof(double));
+	zsrc1 = 1.5+1.5*I;
+	zsrc2 = -0.25+1.5*I;
+	zsrc3 = -0.5-1.5*I;
+	analyticulapl(u_analytic,zDom,zsrc1,zsrc2,zsrc3,sizevec[11]);
 
 /*
 Compute solution with standard quadrature
 */
 	u_standardq = malloc(sizevec[11]*sizeof(double));
 	normalquadlapl(u_standardq, mu, zDom, zDrops, zpDrops, wDrops, sizevec[11], sizevec[3]);
+
+
+	printf("u_standardq[i]=%f\n",u_standardq[0]);
+	printf("REzDom[i]=%f\n",creal(zDom[0]));
+	printf("IMzDom[i]=%f\n",cimag(zDom[0]));
 
 
 /*
@@ -89,12 +105,12 @@ Correct computed solution using special quadrature where needed.
 	u_specq = malloc(sizevec[14]*sizeof(double));
 	specialquadlapl(u_specq,u_standardq,mu,zDom,zDrops,zpDrops,wDrops,panels,sizevec[11],sizevec[1]);
 
-//	printf("uspec[i]=%f\n",u_specq[0]);
+	printf("uspec[i]=%f\n",u_specq[0]);
 
 	umax = 0;
 	for (i=0; i<sizevec[14]; i++) {
-		if (fabs(umax) < fabs(ucorrect[i])) {
-			umax = fabs(ucorrect[i]);
+		if (fabs(umax) < fabs(u_analytic[i])) {
+			umax = fabs(u_analytic[i]);
 		}
 	}
 	printf("umax = %f\n",umax );
@@ -102,7 +118,7 @@ Correct computed solution using special quadrature where needed.
 	errorvec = malloc(sizevec[11]*sizeof(double));
 	errormax = 0;
 	for (i=0; i<sizevec[14]; i++) {
-		errorvec[i] = fabs(u_specq[i]-ucorrect[i])/umax;
+		errorvec[i] = fabs(u_specq[i]-u_analytic[i])/umax;
 		//printf("errorvec[%d]=%f\n",i,errorvec[i] );
 		if (errormax < errorvec[i]) {
 			errormax = errorvec[i];
@@ -112,3 +128,17 @@ Correct computed solution using special quadrature where needed.
 
 	return 0;
 }
+
+
+void analyticulapl(double *u_analytic,double complex *zDom, double complex z1, double complex z2, double complex z3, int N) {
+
+	int i;
+
+	for (i=0; i<N; i++) {
+		u_analytic[i] = creal(1/(zDom[i]-z1) + 1/(zDom[i]-z2) + 1/(zDom[i]-z3));
+	}
+
+}
+
+
+

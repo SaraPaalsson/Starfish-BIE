@@ -127,10 +127,6 @@ void specialquadlapl(double *u_specq, double *u_standardq, double *mu, double co
 	//Is target point zk close enough to panel k to warrant further tests?
             if (cabs(zk-mid) < cabs(len)) {
 
-            if (i==199) {
-                printf("i=199, k=%d \n",k);
-            }
-
             	nz = 2*(zk-mid)/len;
             	oldsum = 0;
             	testsum = 0;

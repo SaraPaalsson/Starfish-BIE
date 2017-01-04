@@ -8,6 +8,7 @@ elseif strcmp(res_interf,'high')
 elseif strcmp(res_interf,'superlow')
     Npanels = 10;
 end
+
 N = Npanels*16;
 
 % Create starfish parametrization

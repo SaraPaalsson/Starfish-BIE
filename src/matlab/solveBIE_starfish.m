@@ -4,7 +4,7 @@ close all; clear all; clc
 addpath('mex')
 
 % ----------------- Set parameters ----------------------------
-res_interf = 'low'; %low, high
+res_interf = 'superlow'; %low, high
 res_domain = 'low'; %superlow, low, high
 res = struct(); %result struct 
 savePlots = 0; %if save plots
