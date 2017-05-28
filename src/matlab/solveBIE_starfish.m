@@ -3,9 +3,11 @@ close all; clear all; clc
 
 addpath('mex')
 
+compErrorEst = 0; 
+
 % ----------------- Set parameters ----------------------------
-res_interf = 'low'; %low, high
-res_domain = 'low'; %superlow, low, high
+res_interf = 'low'; %superlow,low, high
+res_domain = 'verylow'; %superlow, verylow, low, high
 res = struct(); %result struct 
 savePlots = 0; %if save plots
 savedata = 0;
@@ -38,6 +40,7 @@ res.uknown = u_known;
 load 'IP1632.mat'
 load 'glW.mat' %read in GL 16 and 32 weights
 
+
 % ----------------- Calculate u ------------------------------------------
 % Compute u over the domain
 % Use 16-GL when possible
@@ -53,40 +56,42 @@ if savedata
 end
 res.u = u;
 
-% disp('Compute u special quadrature')
-% tic
-% [uspec] = specquad_lapl(u, mu_lapl, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
-%     dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32);
-% toc
-disp('Compute u special quadrature MEX')
+disp('Compute u special quadrature')
 tic
-[uspec,~] = mex_saraspecquad(u, mu_lapl, dom.tau(dom.panels), dom.zDrops, dom.taup(dom.tpar), dom.wDrops, dom.z);
+[uspec] = specquad_lapl(u, mu_lapl, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
+    dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32);
 toc
+% disp('Compute u special quadrature MEX')
+% tic
+% [uspec,~] = mex_saraspecquad(u, mu_lapl, dom.tau(dom.panels), dom.zDrops, dom.taup(dom.tpar), dom.wDrops, dom.z);
+% toc
 
 if savedata
-    savestr = ['../results/specquadu_' res_domain];
+    savestr = ['../../results/specquadu_' res_domain];
     save(savestr,'uspec')
 end
 res.uspec = uspec;
 
 %----------------------------------------------------
 % Compute error estimates
-
+if compErrorEst
 disp('Compute estimates')
 % Compute error estimate on grid
 errest = error_estL(dom.z,dom.tau(dom.panels),dom.zDrops,dom.Npanels, ...
     mu_lapl,dom.wDrops,dom.taup(dom.tpar)); 
 
-savestr = ['../results/errorest_' res_domain];
+savestr = ['../../results/errorest_' res_domain];
 save(savestr,'errest')
 res.errest = errest;
+end
 
-%
+
 % -------------------------
-% 
-% load('normquadu_high')
-% load('specquadu_high')
-% load('errorest_high')
+% Load precomputed resultfiles
+%
+% load('../../results/normquadu_high')
+% load('../../results/specquadu_high')
+% load('../../results/errorest_high')
 % -------------------------
 
 % Compute errors and plot
@@ -104,11 +109,13 @@ Erspec = reshape(log10(er_spec),size(dom.zplot));
 error = {reshape(er,size(dom.zplot))  reshape(er_spec,size(dom.zplot))};
 
 if savedata
-    savestr = ['../results/error_' res_domain];
+    savestr = ['../../results/error_' res_domain];
     save(savestr,'error')
 end
 res.error = error;
 
+
+%%
 %----------------------------------------------------
 % Plot
 disp('Plot!')
@@ -146,6 +153,7 @@ for i=1:2
     box on
 end
 
+if 0
 sfigure(3);
 clf
 publication_fig
@@ -208,7 +216,7 @@ for i=6:6
     publication_fig
     box on
 end
-
+end
 
 %----------------------------------------------------
 % Save plots if wanting to

@@ -3,7 +3,6 @@
 #include "Complex.h"
 #include "omp.h"
 #include <stdio.h>
-#include "matrix.h"
 
 const double pi = 3.1415926535897932385;
 const int startsize = 32;

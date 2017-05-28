@@ -2,4 +2,5 @@
 %     DYLDFLAGS="\$DYLDFLAGS -fopenmp" mex_do_force_quad.cpp  
 % mex CXXFLAGS="\$CXXFLAGS -msse4.1 -falign-loops=16 -Wall -fopenmp" -lgomp mex_do_force_quad.cpp 
 
-mex CXXFLAGS="\$CXXFLAGS -O3  -msse4.1 -Wall -openmp" -lgomp mex/mex_saraspecquad.cpp 
+mex GCC='/usr/local/bin/g++-7' CXXFLAGS="\$CXXFLAGS -O3   ...
+    -msse4.1 -Wall -openmp" -lgomp mex_saraspecquad.cpp 

@@ -5,6 +5,8 @@ if strcmp(res_interf,'low')
     Npanels = 35;
 elseif strcmp(res_interf,'high')
     Npanels = 70;
+elseif strcmp(res_interf,'superlow')
+    Npanels = 20;
 end
 N = Npanels*16;
 
@@ -24,6 +26,9 @@ taupp = @(t) exp(1i*(t+s)).*(-1-7.8*cos(5*(t+s))-(3i)*sin(5*(t+s)));
 if strcmp(res_domain,'superlow')
     nbrR = 10;
     nbrT = 10;
+elseif strcmp(res_domain,'verylow')
+    nbrR = 100;
+    nbrT = 100;
 elseif strcmp(res_domain,'low')
     nbrR = 300;
     nbrT = 300;
