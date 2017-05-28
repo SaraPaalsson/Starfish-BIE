@@ -2,24 +2,23 @@ function [u_spec] = specquad_lapl(u, mudens, Npanels, tau_panels, zDrops, ...
     zpDrops, wDrops, z, IP1, IP2, W16, W32)
 
 u_spec = u;
-testaavst = 0;
 % Calculate mid points and lengths of all panels
 mid2 = (tau_panels(2:end)+tau_panels(1:end-1))/2;
 len2 = tau_panels(2:end)-tau_panels(1:end-1);
 
-tz = zeros(16,1); tzp = zeros(16,1); tW = zeros(16,1); tmu = zeros(16,1);
-nzpan = zeros(16,1); 
-p32 = zeros(32,1); orig32 = zeros(32,1); tW32 = zeros(32,1);
 
-%For debug
-z16 = zeros(size(z)); z32 = z16; zinter = z16;
+% %For debug
+% z16 = zeros(size(z)); z32 = z16; zinter = z16;
 
 nbr_z = length(z);
-for i = 1:nbr_z %Go through all points z   
+parfor i = 1:nbr_z %Go through all points z   
         for k=1:Npanels
             if abs(z(i)-mid2(k)) < abs(len2(k)) %Check if z too close to any panel
+                tz = zeros(16,1); tzp = zeros(16,1); tW = zeros(16,1); tmu = zeros(16,1);
+                nzpan = zeros(16,1); 
+                orig32 = zeros(32,1); tW32 = zeros(32,1);
+                
                 % % Calculate p0
-                testaavst = testaavst + 1;
                 nz = 2*(z(i)-mid2(k))/len2(k); %map zk to nz (z0 in paper)
                 oldsum = 0; testsum = 0;
                 lg1 = log(1-nz);
@@ -110,9 +109,7 @@ for i = 1:nbr_z %Go through all points z
                     end
 %                     if 1
                     if abs(o32sum-p32(1)) < 1e-13 %32 GL suffices!
-                                  
-                        z32(i) = 1;
-                        
+                                                         
                         newsum = 0;
                         for j=1:32
                             newsum = newsum + 1/(2*pi)*tW32(j)*tmu32(j)*...
@@ -142,16 +139,11 @@ for i = 1:nbr_z %Go through all points z
                         
                         
                         u_spec(i) = u_spec(i) + (newsum2-oldsum);
-                        
-                        zinter(i) = 1;
-                       
+                                              
                     end
-                    
-                else    
-                    z16(i) = 1;
+                   
+                
                 end
-                
-                
                 
             end
         end

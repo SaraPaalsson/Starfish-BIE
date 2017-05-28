@@ -8,12 +8,14 @@ compErrorEst = 0;
 % ----------------- Set parameters ----------------------------
 res_interf = 'low'; %superlow,low, high
 res_domain = 'verylow'; %superlow, verylow, low, high
+interf_param = 'circle';
+
 res = struct(); %result struct 
 savePlots = 0; %if save plots
 savedata = 0;
 
 % ----------------- Setup domain  ------------------------------
-[dom] = main_init(res_interf,res_domain);
+[dom] = main_init(res_interf,res_domain,interf_param);
 res.dom = dom;
 
 % ----------------- Set up problem -----------------------------
@@ -115,7 +117,7 @@ end
 res.error = error;
 
 
-%%
+
 %----------------------------------------------------
 % Plot
 disp('Plot!')
