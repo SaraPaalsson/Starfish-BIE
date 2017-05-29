@@ -1,5 +1,7 @@
-%% Solve BIE for starfish to compute complex density
-close all; clear all; clc
+%% Solve Stokes eq. w/ BIE, using specialquad.
+close all; 
+% clear all; 
+clc
 
 addpath('../mex')
 
@@ -7,7 +9,7 @@ compErrorEst = 0;
 
 % ----------------- Set parameters ----------------------------
 res_interf = 'low'; %superlow,low, high
-res_domain = 'verylow'; %superlow, verylow, low, high
+res_domain = 'low'; %superlow, verylow, low, high
 interf_param = 'circle';
 
 res = struct(); %result struct 
@@ -19,20 +21,27 @@ savedata = 0;
 res.dom = dom;
 
 % ----------------- Set up problem -----------------------------
-% Define boundary condition, Laplace's eq. --> Provides exact solution!
-zsrc1 = 1.5+1.5i;
-zsrc2 = -0.25+1.5i;
-zsrc3 = -0.5-1.5i;
-RHS = @(x) real( 1 ./ (x-zsrc1) + 1 ./ (x-zsrc2) + 1 ./ (x-zsrc3) );
+% Define boundary condition
+
+% BC caused by point source located at x0 with strength m
+x0 = 15 + 15i;
+f0 = 4*pi + 4*pi*1i;
+% % Sum all stokeslets for rhs.
+RHS = @(x) comprhs_stokes(x,x0,f0);
+% x0 = 5 + 5i;
+% RHS = @(x) (2*real(x-x0)./(abs(x-x0).^2))+ ...
+%     1i*(2*imag(x-x0)./(abs(x-x0).^2));
+% RHS = @(x) 0.5*m/pi*real(x-x0)./abs(x-x0).^2 + 1i*0.5*m/pi*imag(x-x0)./abs(x-x0).^2;
 res.RHS = RHS;
 
 
 % ----------------- Calculate density ------------------------------------
 % Solve BIE to obtain density mu
-mu_lapl = mubie_lapl(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
+mu_stokes = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
     dom.taupp(dom.tpar),dom.wDrops,RHS);
-res.mu = mu_lapl;
+res.mu = mu_stokes;
 
+% figure(); plot(real(mu_stokes)); hold on; plot(imag(mu_stokes),'--')
 
 % Calculate known solution over the domain
 u_known = RHS(dom.z);
@@ -47,46 +56,47 @@ load 'glW.mat' %read in GL 16 and 32 weights
 % Compute u over the domain
 % Use 16-GL when possible
 % Use special quadrature for points too close to the boundary
+evalinterf = 0; %If we compute u on interface
 disp('Compute u normal quadrature')
 tic
-u = compu_lapl(dom.N, mu_lapl, dom.z, dom.zDrops, dom.taup(dom.tpar), dom.wDrops);
+u = compu_stokes(mu_stokes, dom.z, dom.zDrops, ...
+    dom.taup(dom.tpar), dom.taupp(dom.tpar), dom.wDrops,evalinterf);
 toc
+% u_known = RHS(dom.zDrops);
+% figure(1); colorlinesplot(real(dom.zDrops),imag(dom.zDrops),...
+%     [], abs(u),1,[],[],[1 560]); 
+% figure(2); colorlinesplot(real(dom.zDrops),imag(dom.zDrops),...
+%     [], abs(u_known),2,[],[],[1 560]); 
+% 
+% figure(3); plot(dom.tpar,real(u)); hold on
+% plot(dom.tpar,imag(u),'.-');
+% plot(dom.tpar,real(u_known),'--')
+% plot(dom.tpar,imag(u_known),'^--')
+% figure(4); plot(dom.tpar,abs(u)); hold on
+% plot(dom.tpar,abs(u_known),'--')
 
 if savedata 
-    savestr = ['../results/normquadu_' res_domain];
+    savestr = ['../results/stokes_normq_' res_domain];
     save(savestr,'u')
 end
 res.u = u;
 
-disp('Compute u special quadrature')
-tic
-[uspec] = specquad_lapl(u, mu_lapl, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
-    dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32);
-toc
+uspec = u;
+% disp('Compute u special quadrature')
+% tic
+% [uspec] = specquad_lapl(u, mu_lapl, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
+%     dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32);
+% toc
 % disp('Compute u special quadrature MEX')
 % tic
 % [uspec,~] = mex_saraspecquad(u, mu_lapl, dom.tau(dom.panels), dom.zDrops, dom.taup(dom.tpar), dom.wDrops, dom.z);
 % toc
 
 if savedata
-    savestr = ['../../results/specquadu_' res_domain];
+    savestr = ['../../results/stokes_specq_' res_domain];
     save(savestr,'uspec')
 end
 res.uspec = uspec;
-
-%----------------------------------------------------
-% Compute error estimates
-if compErrorEst
-disp('Compute estimates')
-% Compute error estimate on grid
-errest = error_estL(dom.z,dom.tau(dom.panels),dom.zDrops,dom.Npanels, ...
-    mu_lapl,dom.wDrops,dom.taup(dom.tpar)); 
-
-savestr = ['../../results/errorest_' res_domain];
-save(savestr,'errest')
-res.errest = errest;
-end
-
 
 % -------------------------
 % Load precomputed resultfiles
@@ -133,7 +143,7 @@ tplot = linspace(0,2*pi,1000);
 for i=1:2
     sfigure(i);
     clf
-    publication_fig
+%     publication_fig
     pcolor(real(dom.zplot),imag(dom.zplot),log10(error{i}))
     shading flat
     % shading interp
@@ -149,9 +159,9 @@ for i=1:2
     set(gca,'xtick',[])
     set(gca,'ytick',[])
     axis equal
-    axis([0 1.3 0 1.3])
+%     axis([0 1.3 0 1.3])
     caxis([-15 0])
-    publication_fig
+%     publication_fig
     box on
 end
 

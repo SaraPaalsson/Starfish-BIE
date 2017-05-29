@@ -8,6 +8,8 @@ switch res_interf
         Npanels = 70;
     case 'superlow'
         Npanels = 20;
+    case 'superhigh'
+        Npanels = 100;
 end
 N = Npanels*16;
 
@@ -19,9 +21,10 @@ switch interf_param
         taup = @(t) (-1.5*sin(5*(t+s))+1i*(1+0.3*cos(5*(t+s)))).*exp(1i*(t+s));
         taupp = @(t) exp(1i*(t+s)).*(-1-7.8*cos(5*(t+s))-(3i)*sin(5*(t+s)));
     case 'circle'
-        tau = @(t) cos(t) + 1i*sin(t);
-        taup = @(t) -sin(t) + 1i*cos(t);
-        taupp = @(t) -cos(t) - 1i*sin(t);
+        r = 2;
+        tau = @(t) r*(cos(t) + 1i*sin(t));
+        taup = @(t) r*(-sin(t) + 1i*cos(t));
+        taupp = @(t) r*(-cos(t) - 1i*sin(t));
 end
 
 % Obtan GL-16 nodes and weights
@@ -50,7 +53,9 @@ end
 R1 = 0.4; 
 
 r = [linspace(0,R1,10) linspace(R1, 0.999,nbrR)]';
-t = linspace(0,pi/2,nbrT)';
+% t = linspace(0,pi/2,nbrT)';
+t = linspace(0,2*pi,nbrT)';
+% t = 0;
 [Rplot,Tplot] = meshgrid(r,t);
 z = Rplot(:).*tau(Tplot(:));
 zplot = Rplot.*tau(Tplot);
