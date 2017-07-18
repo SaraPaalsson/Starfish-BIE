@@ -36,7 +36,7 @@ else
         M1 = sum(mu.*wDrops.*imag(zpDrops./(zDrops-z(j))));
         M2 = sum(conj(mu).*wDrops.*imag(zpDrops.*conj(zDrops-z(j)))./(conj(zDrops-z(j)).^2));
         
-        u(j) = -1i/pi*M1 + 1i/pi*M2;
+        u(j) = - 1i/pi*M1 + 1i/pi*M2;
     end
     
 end

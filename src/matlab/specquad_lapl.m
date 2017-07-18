@@ -23,10 +23,13 @@ parfor i = 1:nbr_z %Go through all points z
                 oldsum = 0; testsum = 0;
                 lg1 = log(1-nz);
                 lg2 = log(-1-nz);
-                for j =1:16 %map all nodes on the panel to [-1,1]
-                    tz(j) = zDrops((k-1)*16+j);
-                    nzpan(j) = 2*(tz(j)-mid2(k))/len2(k);  
-                end
+                
+                j = (1:16)';
+                indj = (k-1)*16+j;
+                tz = zDrops(indj);
+                nzpan = 2*(tz-mid2(k))/len2(k);  %map all nodes on the panel to [-1,1]
+                
+                
                 %Check if the point nz is between the panel and the real axis
                 if real(nz) > -1 && real(nz) < 1
                     if imag(nz) > 0 %above real axis, check if enclosed by axis and panel
@@ -44,14 +47,12 @@ parfor i = 1:nbr_z %Go through all points z
                             tmpb = imag(nzpan);
 
                             p = vandernewtonT(tmpT,tmpb,16);
-                            test = 0;
-                                for kk=0:15
-                                    test = test + p(kk+1)*real(nz)^kk;
-                                end
+                            
+                            kk = (0:15)';
+                            test = sum(p.*real(nz).^kk);
+
                             if test > imag(nz) %Correct value of integral
-%                                 lg1 = lg1 + pi*1i;
-%                                 lg2 = lg2 - pi*1i;
-                                lg1 = lg1 - pi*1i; %HMMM???
+                                lg1 = lg1 - pi*1i; 
                                 lg2 = lg2 + pi*1i;
                             end
                         end
@@ -66,18 +67,14 @@ parfor i = 1:nbr_z %Go through all points z
                             if furthercheck
                                 tmpT = real(nzpan);
                                 tmpb = imag(nzpan);
-  
-                            p = vandernewtonT(tmpT,tmpb,16);
-                            test = 0;
-                                for kk=0:15
-                                    test = test + p(kk+1)*real(nz)^kk;
-                                end
-
-
+                                
+                                p = vandernewtonT(tmpT,tmpb,16);
+                                
+                                kk = (0:15)';
+                                test = sum(p.*real(nz).^kk);
+                                
                                 if test < imag(nz) %Correct value of integral
-%                                     lg1 = lg1 - pi*1i;
-%                                     lg2 = lg2 + pi*1i;
-                                    lg1 = lg1 + pi*1i; %HMMM??
+                                    lg1 = lg1 + pi*1i;
                                     lg2 = lg2 - pi*1i;
                                 end
                             end
@@ -87,34 +84,29 @@ parfor i = 1:nbr_z %Go through all points z
                 p32 = zeros(32,1);
                 p32(1) = lg1-lg2;
                 % % Calculate old contribution to u from panel
-                for j=1:16 %save all info from nodes on panel
-                    tzp(j) = zpDrops((k-1)*16+j);
-                    tmu(j) = mudens((k-1)*16+j);
-                    tW(j) = wDrops((k-1)*16+j);
-                    oldsum = oldsum + 1/(2*pi)*tW(j)*tmu(j)*imag(tzp(j)/(tz(j)-z(i)));
-                    testsum = testsum + tW(j)*tzp(j)/(tz(j)-z(i)); %num.approx p0
-                end
-%                 if 0
+                
+                
+                tzp = zpDrops(indj);
+                tmu = mudens(indj);
+                tW = wDrops(indj);
+                oldsum = 1/(2*pi)*sum(tW.*tmu.*imag(tzp./(tz-z(i))));
+                testsum = sum(tW.*tzp./(tz-z(i)));
+                
                 if abs(p32(1)-testsum) > 1e-13 %Standard 16-GL not good enough!
                     % % Interpolate to 32-point GL quadrature
                     tmu32 = IPmultR(tmu,IP1,IP2);
                     tz32 = IPmultR(tz,IP1,IP2);
                     tzp32 = IPmultR(tzp,IP1,IP2);
                     plen = tW(1)/W16(1);
-                    o32sum = 0;
-                    for j=1:32 %Approximate new p0
-                        tW32(j) = W32(j)*plen;
-                        orig32(j) = tW32(j)/(tz32(j)-z(i));
-                        o32sum = o32sum + tzp32(j)*orig32(j);
-                    end
-%                     if 1
+
+                    tW32 = W32.*plen;
+                    orig32 = tW32./(tz32-z(i));
+                    o32sum = sum(tzp32.*orig32);
+                    
                     if abs(o32sum-p32(1)) < 1e-13 %32 GL suffices!
-                                                         
-                        newsum = 0;
-                        for j=1:32
-                            newsum = newsum + 1/(2*pi)*tW32(j)*tmu32(j)*...
-                                imag(tzp32(j)/(tz32(j)-z(i)));
-                        end
+                        
+                        newsum = 1/(2*pi)*sum(tW32.*tmu32.*imag(tzp32./(tz32-z(i))));
+                        
                         u_spec(i) = u_spec(i) + (newsum-oldsum);
                     else %32 GL not enough, use interpolatory quadrature instead
                         % Use interpolatory quadrature
@@ -125,18 +117,14 @@ parfor i = 1:nbr_z %Go through all points z
                             p32(j+1) = nz*p32(j) + (1-signc)/(j);%(1-signc)/j;
                             signc = -signc;
                         end
-                        c32 = vandernewtonT(nzpan32,tmu32,32);
-                        newsum = 0;
-                        for j=1:32
-                            newsum = newsum + 1/(2*pi) * imag(p32(j)*c32(j));
-                        end
-                        
-                        p32coeff = vandernewton(nzpan32,p32,32);
-                        newsum2 = 0;
-                        for j=1:32
-                            newsum2 = newsum2 + 1/(2*pi) * imag(p32coeff(j)*tmu32(j));
-                        end
-                        
+%                         c32 = vandernewtonT(nzpan32,tmu32,32);
+%                         newsum = 0;
+%                         for j=1:32
+%                             newsum = newsum + 1/(2*pi) * imag(p32(j)*c32(j));
+%                         end
+%                         
+                        p32coeff = vandernewton(nzpan32,p32,32);  
+                        newsum2 = 1/(2*pi)*sum(imag(p32coeff.*tmu32));
                         
                         u_spec(i) = u_spec(i) + (newsum2-oldsum);
                                               

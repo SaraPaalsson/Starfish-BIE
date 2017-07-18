@@ -10,21 +10,23 @@ compErrorEst = 0;
 % ----------------- Set parameters ----------------------------
 res_interf = 'low'; %superlow,low, high
 res_domain = 'low'; %superlow, verylow, low, high
-interf_param = 'circle';
+interf_param = 'ellipse'; %'circle','starfish','ellipse'
+typeplot = 'filledplot'; %'filledplot','lineplot'
 
 res = struct(); %result struct 
 savePlots = 0; %if save plots
 savedata = 0;
 
 % ----------------- Setup domain  ------------------------------
-[dom] = main_init(res_interf,res_domain,interf_param);
+[dom] = main_init(res_interf,res_domain,interf_param,typeplot);
 res.dom = dom;
+figure();plot(dom.zDrops);
 
 % ----------------- Set up problem -----------------------------
 % Define boundary condition
 
 % BC caused by point source located at x0 with strength m
-x0 = 15 + 15i;
+x0 = 5 + 5i;
 f0 = 4*pi + 4*pi*1i;
 % % Sum all stokeslets for rhs.
 RHS = @(x) comprhs_stokes(x,x0,f0);
@@ -42,6 +44,7 @@ mu_stokes = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
 res.mu = mu_stokes;
 
 % figure(); plot(real(mu_stokes)); hold on; plot(imag(mu_stokes),'--')
+% dom.z = dom.zDrops(1)*0.001;
 
 % Calculate known solution over the domain
 u_known = RHS(dom.z);
@@ -62,18 +65,6 @@ tic
 u = compu_stokes(mu_stokes, dom.z, dom.zDrops, ...
     dom.taup(dom.tpar), dom.taupp(dom.tpar), dom.wDrops,evalinterf);
 toc
-% u_known = RHS(dom.zDrops);
-% figure(1); colorlinesplot(real(dom.zDrops),imag(dom.zDrops),...
-%     [], abs(u),1,[],[],[1 560]); 
-% figure(2); colorlinesplot(real(dom.zDrops),imag(dom.zDrops),...
-%     [], abs(u_known),2,[],[],[1 560]); 
-% 
-% figure(3); plot(dom.tpar,real(u)); hold on
-% plot(dom.tpar,imag(u),'.-');
-% plot(dom.tpar,real(u_known),'--')
-% plot(dom.tpar,imag(u_known),'^--')
-% figure(4); plot(dom.tpar,abs(u)); hold on
-% plot(dom.tpar,abs(u_known),'--')
 
 if savedata 
     savestr = ['../results/stokes_normq_' res_domain];
@@ -81,12 +72,11 @@ if savedata
 end
 res.u = u;
 
-uspec = u;
-% disp('Compute u special quadrature')
-% tic
-% [uspec] = specquad_lapl(u, mu_lapl, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
-%     dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32);
-% toc
+disp('Compute u special quadrature')
+tic
+[uspec] = specquad_stokes(u, mu_stokes, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
+    dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32,u_known);
+toc
 % disp('Compute u special quadrature MEX')
 % tic
 % [uspec,~] = mex_saraspecquad(u, mu_lapl, dom.tau(dom.panels), dom.zDrops, dom.taup(dom.tpar), dom.wDrops, dom.z);
@@ -118,6 +108,10 @@ Er = reshape(log10(er),size(dom.zplot));
 er_spec = abs(u_known-uspec)/relnorm;
 Erspec = reshape(log10(er_spec),size(dom.zplot));
 
+disp(['Max err standard quad: e_stand = ' num2str(max(er))])
+disp(['Max err special quad: e_spec = ' num2str(max(er_spec))])
+
+
 error = {reshape(er,size(dom.zplot))  reshape(er_spec,size(dom.zplot))};
 
 if savedata
@@ -139,7 +133,6 @@ levels = -15:3:-3;
 zoombox = [0.45 1.1 0.1 0.43];
 drawbox = @(x,y) plot([x(1) x(2) x(2) x(1) x(1)],[y(1) y(1) y(2) y(2) y(1)],'-k');
 tplot = linspace(0,2*pi,1000);
-
 for i=1:2
     sfigure(i);
     clf
@@ -148,8 +141,9 @@ for i=1:2
     shading flat
     % shading interp
     colormap parula
-    colorbar
-    caxis([-18 -2])
+    c = colorbar; 
+    ylabel(c,'log_{10} error','FontSize',20)
+%     caxis([-18 -2])
     set(gca,'yaxislocation','right');
     set(gca,'YTicklabel',[])
     set(gca,'XTicklabel',[])
@@ -161,10 +155,11 @@ for i=1:2
     axis equal
 %     axis([0 1.3 0 1.3])
     caxis([-15 0])
-%     publication_fig
+    publication_fig
     box on
 end
 
+%%
 if 0
 sfigure(3);
 clf
@@ -184,7 +179,7 @@ set(gca,'xtick',[])
 set(gca,'ytick',[])
 axis equal
 axis([0 1.3 0 1.3])
-caxis([-15 0])
+% caxis([-15 0])
 publication_fig
 box on
 
