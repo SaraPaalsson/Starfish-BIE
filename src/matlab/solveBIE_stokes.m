@@ -1,39 +1,36 @@
 %% Solve Stokes eq. w/ BIE, using specialquad.
-close all; 
-% clear all; 
+close all;
+% clear all;
 clc
 
 addpath('../mex')
 
-compErrorEst = 0; 
+compErrorEst = 0;
 
 % ----------------- Set parameters ----------------------------
 res_interf = 'low'; %superlow,low, high
 res_domain = 'low'; %superlow, verylow, low, high
-interf_param = 'ellipse'; %'circle','starfish','ellipse'
+interf_param = 'starfish'; %'circle','starfish','ellipse'
 typeplot = 'filledplot'; %'filledplot','lineplot'
 
-res = struct(); %result struct 
+res = struct(); %result struct
 savePlots = 0; %if save plots
 savedata = 0;
 
 % ----------------- Setup domain  ------------------------------
 [dom] = main_init(res_interf,res_domain,interf_param,typeplot);
 res.dom = dom;
-figure();plot(dom.zDrops);
 
 % ----------------- Set up problem -----------------------------
 % Define boundary condition
 
 % BC caused by point source located at x0 with strength m
-x0 = 5 + 5i;
-f0 = 4*pi + 4*pi*1i;
+x0(1,1) = 2 + 3i;
+f0(1,1) = 4*pi + 4*pi*1i;
+x0(2,1) = -1.4 - 1.3i;
+f0(2,1) = pi - 2*pi*1i;
 % % Sum all stokeslets for rhs.
 RHS = @(x) comprhs_stokes(x,x0,f0);
-% x0 = 5 + 5i;
-% RHS = @(x) (2*real(x-x0)./(abs(x-x0).^2))+ ...
-%     1i*(2*imag(x-x0)./(abs(x-x0).^2));
-% RHS = @(x) 0.5*m/pi*real(x-x0)./abs(x-x0).^2 + 1i*0.5*m/pi*imag(x-x0)./abs(x-x0).^2;
 res.RHS = RHS;
 
 
@@ -42,9 +39,6 @@ res.RHS = RHS;
 mu_stokes = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
     dom.taupp(dom.tpar),dom.wDrops,RHS);
 res.mu = mu_stokes;
-
-% figure(); plot(real(mu_stokes)); hold on; plot(imag(mu_stokes),'--')
-% dom.z = dom.zDrops(1)*0.001;
 
 % Calculate known solution over the domain
 u_known = RHS(dom.z);
@@ -66,7 +60,7 @@ u = compu_stokes(mu_stokes, dom.z, dom.zDrops, ...
     dom.taup(dom.tpar), dom.taupp(dom.tpar), dom.wDrops,evalinterf);
 toc
 
-if savedata 
+if savedata
     savestr = ['../results/stokes_normq_' res_domain];
     save(savestr,'u')
 end
@@ -77,10 +71,6 @@ tic
 [uspec] = specquad_stokes(u, mu_stokes, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
     dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32,u_known);
 toc
-% disp('Compute u special quadrature MEX')
-% tic
-% [uspec,~] = mex_saraspecquad(u, mu_lapl, dom.tau(dom.panels), dom.zDrops, dom.taup(dom.tpar), dom.wDrops, dom.z);
-% toc
 
 if savedata
     savestr = ['../../results/stokes_specq_' res_domain];
@@ -120,30 +110,74 @@ if savedata
 end
 res.error = error;
 
+%% Compute estimates
+compErrorEst = 1
+if compErrorEst
+    disp('Compute estimates')
+    rho1 = mu_stokes;
+    ntz = -1i*dom.taup(dom.tpar)./abs(dom.taup(dom.tpar));
+    rho2 = mu_stokes.*conj(ntz).^2;
+    rho3 = mu_stokes; %Or should this be mu_stokes*conj(tau-z)?
+    
+    % Compute error estimate on grid
+    errest = error_estL_stokes(dom.z,dom.tau(dom.panels),dom.zDrops,dom.Npanels, ...
+        rho1,rho2,rho3,dom.wDrops,dom.taup(dom.tpar));
+    
+    savestr = ['../../results/errorest_' res_domain];
+    save(savestr,'errest')
+    res.errest = errest;
+end
 
+levels = -15:3:-3;
+figure(1);
+clf
+contourf(real(dom.zplot),imag(dom.zplot),log10(error{1}),levels,'EdgeColor','none')
+shading flat
+colormap parula
+c = colorbar;
+ylabel(c,'$\log_{10}$ rel. error','FontSize',13,'Interpreter','latex')
+set(gca,'yaxislocation','right');
+set(gca,'YTicklabel',[])
+set(gca,'XTicklabel',[])
+hold on
+plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
+plot(real(dom.zDrops),imag(dom.zDrops),'.k','MarkerSize',3)
+set(gca,'xtick',[])
+set(gca,'ytick',[])
+axis equal
+axis([0.5 1.3 0 0.5])
+caxis([-15 0])
+box on
 
+%Add estimate
+errestshape = reshape(errest,size(error{1}));
+contour(real(dom.zplot),imag(dom.zplot),log10(errestshape),levels,'k','linewidth',2)
+
+%%
 %----------------------------------------------------
 % Plot
+close all
+
 disp('Plot!')
 spec_str1 = '10log error normal quad., 35 panels'; spec_str2 = '10log error special quad., 35 panels';
 titstr = {spec_str1 spec_str2};
 
 % For contour plot
-levels = -15:3:-3; 
+levels = -15:3:-3;
 zoombox = [0.45 1.1 0.1 0.43];
 drawbox = @(x,y) plot([x(1) x(2) x(2) x(1) x(1)],[y(1) y(1) y(2) y(2) y(1)],'-k');
 tplot = linspace(0,2*pi,1000);
 for i=1:2
-    sfigure(i);
+    figure(i);
     clf
-%     publication_fig
+    %     publication_fig
     pcolor(real(dom.zplot),imag(dom.zplot),log10(error{i}))
     shading flat
     % shading interp
     colormap parula
-    c = colorbar; 
-    ylabel(c,'log_{10} error','FontSize',20)
-%     caxis([-18 -2])
+    c = colorbar;
+    ylabel(c,'$\log_{10}$ rel. error','FontSize',13,'Interpreter','latex')
+    %     caxis([-18 -2])
     set(gca,'yaxislocation','right');
     set(gca,'YTicklabel',[])
     set(gca,'XTicklabel',[])
@@ -153,76 +187,94 @@ for i=1:2
     set(gca,'xtick',[])
     set(gca,'ytick',[])
     axis equal
-%     axis([0 1.3 0 1.3])
+    axis([0 1.3 0 1.3])
     caxis([-15 0])
     publication_fig
     box on
 end
-
-%%
-if 0
-sfigure(3);
-clf
-publication_fig
-pcolor(real(dom.zplot),imag(dom.zplot),log10(error{2}))
+figure(3); clf;
+pcolor(real(dom.zplot),imag(dom.zplot),real(RHS(dom.zplot)))
 shading flat
-% shading interp
-colormap parula
-colorbar
-caxis([-18 -2])
+hold on
+plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
 set(gca,'yaxislocation','right');
 set(gca,'YTicklabel',[])
 set(gca,'XTicklabel',[])
-hold on
-plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
+colormap parula
+c = colorbar;
+ylabel(c,'real$(\mathbf{u})$','FontSize',13,'interpreter','latex')
 set(gca,'xtick',[])
 set(gca,'ytick',[])
 axis equal
-axis([0 1.3 0 1.3])
-% caxis([-15 0])
+% axis([0 1.3 0 1.3])
 publication_fig
 box on
 
-titstr = {'Level curves, normal quad.' 'Level curves, special quad.'};
-for i=4:5
-    sfigure(i);
-    clf;
-    publication_fig
-    plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
-    hold on
-    contour(real(dom.zplot),imag(dom.zplot),log10(error{1}),levels,'k')
-    plot(real(dom.zDrops),imag(dom.zDrops),'.k')
-    shading flat
-    set(gca,'xtick',[])
-    set(gca,'ytick',[])
-    axis equal
-    axis(zoombox)
-    axis([0 1.3 0 1.3])
-    caxis([-15 0])
-    axis(zoombox)
-    publication_fig
-    box on
-end
 
-for i=6:6
-    sfigure(i);
+%%
+if 0
+    sfigure(3);
     clf
     publication_fig
-    plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
-    hold on
-    contour(real(dom.zplot),imag(dom.zplot),log10(error{2}),levels,'k')
-    plot(real(dom.zDrops),imag(dom.zDrops),'.k')
+    pcolor(real(dom.zplot),imag(dom.zplot),log10(error{2}))
     shading flat
+    % shading interp
+    colormap parula
+    colorbar
+    caxis([-18 -2])
+    set(gca,'yaxislocation','right');
+    set(gca,'YTicklabel',[])
+    set(gca,'XTicklabel',[])
+    hold on
+    plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
     set(gca,'xtick',[])
     set(gca,'ytick',[])
     axis equal
-    axis(zoombox)
     axis([0 1.3 0 1.3])
-    caxis([-15 0])
-    axis(zoombox)
+    % caxis([-15 0])
     publication_fig
     box on
-end
+    
+    titstr = {'Level curves, normal quad.' 'Level curves, special quad.'};
+    for i=4:5
+        sfigure(i);
+        clf;
+        publication_fig
+        plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
+        hold on
+        contour(real(dom.zplot),imag(dom.zplot),log10(error{1}),levels,'k')
+        plot(real(dom.zDrops),imag(dom.zDrops),'.k')
+        shading flat
+        set(gca,'xtick',[])
+        set(gca,'ytick',[])
+        axis equal
+        axis(zoombox)
+        axis([0 1.3 0 1.3])
+        caxis([-15 0])
+        axis(zoombox)
+        publication_fig
+        box on
+    end
+    
+    for i=6:6
+        sfigure(i);
+        clf
+        publication_fig
+        plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
+        hold on
+        contour(real(dom.zplot),imag(dom.zplot),log10(error{2}),levels,'k')
+        plot(real(dom.zDrops),imag(dom.zDrops),'.k')
+        shading flat
+        set(gca,'xtick',[])
+        set(gca,'ytick',[])
+        axis equal
+        axis(zoombox)
+        axis([0 1.3 0 1.3])
+        caxis([-15 0])
+        axis(zoombox)
+        publication_fig
+        box on
+    end
 end
 
 %----------------------------------------------------

@@ -11,7 +11,7 @@ len2 = tau_panels(2:end)-tau_panels(1:end-1);
 % z16 = zeros(size(z)); z32 = z16; zinter = z16;
 
 nbr_z = length(z);
-parfor il = 1:nbr_z %Go through all points z
+for il = 1:nbr_z %Go through all points z
     for k=1:Npanels
         if abs(z(il)-mid2(k)) < abs(len2(k)) %Check if z too close to any panel
             tz = zeros(16,1); tzp = zeros(16,1); tW = zeros(16,1); tmu = zeros(16,1);
@@ -57,6 +57,8 @@ parfor il = 1:nbr_z %Go through all points z
                         if test > imag(nz) %Correct value of integral
                             lg1 = lg1 - pi*1i; 
                             lg2 = lg2 + pi*1i;
+%                             lg1 = lg1 + pi*1i;
+%                             lg2 = lg2 - pi*1i;
                         end
                     end
                 else if imag(nz) < 0 %below the real axis, check enclosed
@@ -78,6 +80,8 @@ parfor il = 1:nbr_z %Go through all points z
                             if test < imag(nz) %Correct value of integral
                                 lg1 = lg1 + pi*1i; 
                                 lg2 = lg2 - pi*1i;
+%                                 lg1 = lg1 - pi*1i; 
+%                                 lg2 = lg2 + pi*1i;
                             end
                         end
                     end

@@ -13,6 +13,8 @@ len2 = tau_panels(2:end)-tau_panels(1:end-1);
 nbr_z = length(z);
 parfor i = 1:nbr_z %Go through all points z   
         for k=1:Npanels
+             
+%             if 1
             if abs(z(i)-mid2(k)) < abs(len2(k)) %Check if z too close to any panel
                 tz = zeros(16,1); tzp = zeros(16,1); tW = zeros(16,1); tmu = zeros(16,1);
                 nzpan = zeros(16,1); 
@@ -91,8 +93,10 @@ parfor i = 1:nbr_z %Go through all points z
                 tW = wDrops(indj);
                 oldsum = 1/(2*pi)*sum(tW.*tmu.*imag(tzp./(tz-z(i))));
                 testsum = sum(tW.*tzp./(tz-z(i)));
-                
-                if abs(p32(1)-testsum) > 1e-13 %Standard 16-GL not good enough!
+      
+
+%                 if 1
+               if abs(p32(1)-testsum) > 1e-13 %Standard 16-GL not good enough!
                     % % Interpolate to 32-point GL quadrature
                     tmu32 = IPmultR(tmu,IP1,IP2);
                     tz32 = IPmultR(tz,IP1,IP2);
@@ -103,6 +107,7 @@ parfor i = 1:nbr_z %Go through all points z
                     orig32 = tW32./(tz32-z(i));
                     o32sum = sum(tzp32.*orig32);
                     
+%                     if 0
                     if abs(o32sum-p32(1)) < 1e-13 %32 GL suffices!
                         
                         newsum = 1/(2*pi)*sum(tW32.*tmu32.*imag(tzp32./(tz32-z(i))));

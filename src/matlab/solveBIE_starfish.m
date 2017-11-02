@@ -3,10 +3,10 @@ close all; clear all; clc
 
 addpath('../mex')
 
-compErrorEst = 0;
+compErrorEst = 1;
 
 % ----------------- Set parameters ----------------------------
-res_interf = 'high'; %superlow,low, high
+res_interf = 'superlow'; %superlow,low, high
 res_domain = 'low'; %superlow, verylow, low, high
 interf_param = 'starfish';
 typeplot = 'filledplot'; %'filledplot','lineplot'
@@ -21,10 +21,16 @@ res.dom = dom;
 
 % ----------------- Set up problem -----------------------------
 % Define boundary condition, Laplace's eq. --> Provides exact solution!
-zsrc1 = 1.5+1.5i;
-zsrc2 = -0.25+1.5i;
-zsrc3 = -0.5-1.5i;
-RHS = @(x) real( 1 ./ (x-zsrc1) + 1 ./ (x-zsrc2) + 1 ./ (x-zsrc3) );
+% zsrc1 = 1.5+1.5i;
+% zsrc2 = -0.25+1.5i;
+% zsrc3 = -0.5-1.5i;
+% RHS = @(x) real( 1 ./ (x-zsrc1) + 1 ./ (x-zsrc2) + 1 ./ (x-zsrc3) );
+
+% OBS OBS OBS
+zsrc1 = 3+3i;
+zsrc2 = -3.5-3.5i;
+RHS = @(x) real( 1 ./ (x-zsrc1) + 1 ./ (x-zsrc2));
+
 res.RHS = RHS;
 
 
@@ -87,8 +93,6 @@ if compErrorEst
     save(savestr,'errest')
     res.errest = errest;
 end
-
-
 % -------------------------
 % Load precomputed resultfiles
 %
@@ -117,6 +121,42 @@ if savedata
 end
 res.error = error;
 
+
+
+
+
+%%
+levels = -15:3:-3;
+
+figure(1);
+clf
+contour(real(dom.zplot),imag(dom.zplot),log10(error{1}),levels,'k')
+% pcolor(real(dom.zplot),imag(dom.zplot),log10(error{1}))
+shading flat
+% shading interp
+colormap parula
+colorbar
+set(gca,'yaxislocation','right');
+set(gca,'YTicklabel',[])
+set(gca,'XTicklabel',[])
+hold on
+% plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
+plot(real(dom.zDrops),imag(dom.zDrops),'.-k','MarkerSize',10)
+set(gca,'xtick',[])
+set(gca,'ytick',[])
+% axis equal
+caxis([-15 0])
+% publication_fig
+box on
+axis square
+axis([0 2.1 0 2.1])
+
+%Add estimate
+errestshape = reshape(errest,size(error{1}));
+contour(real(dom.zplot),imag(dom.zplot),log10(errestshape),levels,'r','linewidth',2)
+
+
+%%
 %----------------------------------------------------
 % Plot
 disp('Plot!')
@@ -150,13 +190,13 @@ switch typeplot
             set(gca,'xtick',[])
             set(gca,'ytick',[])
             axis equal
-%             axis([0 1.3 0 1.3])
+            %             axis([0 1.3 0 1.3])
             caxis([-15 0])
             publication_fig
             box on
         end
         
-        if 0
+        if 1
             sfigure(3);
             clf
             publication_fig
@@ -252,7 +292,7 @@ switch typeplot
         end
         
     case 'lineplot'
-        figure(); 
+        figure();
         semilogy(flipud(dom.reld),error{1},'--','MarkerSize',15,'DisplayName','Standard quad., 35 panels'); hold on;
         semilogy(flipud(dom.reld),error{2},'.-','DisplayName','Special quad., 35 panels')
         legend('toggle')

@@ -6,7 +6,7 @@ Nf = size(f,1);
 
 RHS = 0;
 for j=1:Nf
-    xhat = x-x0;
+    xhat = x-x0(j);
     r = abs(xhat);
     xh = real(xhat); yh = imag(xhat);
     f1 = real(f(j)); f2 = imag(f(j));
