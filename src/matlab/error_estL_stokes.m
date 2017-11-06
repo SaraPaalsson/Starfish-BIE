@@ -16,7 +16,7 @@ for panel_idx=1:no_panels
     p_idx = (panel_idx-1)*panel_order+(1:panel_order);
     numerator1(panel_idx) = max(abs(rho1(p_idx).*imag(dzdt(p_idx))));
     numerator2(panel_idx) = max(abs(rho2(p_idx).*(dzdt(p_idx))));
-    numerator3(panel_idx) = max(abs(rho3(p_idx).*(dzdt(p_idx))));
+%     numerator3(panel_idx) = max(abs(rho3(p_idx).*(dzdt(p_idx))));
     L(panel_idx) = sum(abs(w(p_idx).*dzdt(p_idx)));
 end
 % Compute error estimate on grid
@@ -43,16 +43,20 @@ parfor idx=1:numel(z_grid)
         % compute error estimate (abs->imag shows high freq oscillations)
         z0 = z0_r + 1i*d*2/L(panel_idx);
         
+        mumax3 = max(abs(1-z0),abs(-1-z0));
+        numerator3 = max(abs(rho3(p_idx).*(dzdt(p_idx)))*mumax3);
+
+        
         tmp1 = tmp1 + 2*pi*numerator1(panel_idx) ...
             *abs(z0 + 1i*sqrt(1-z0^2))^(-2*panel_order-1);
         
         tmp2 = tmp2 + 2*pi*numerator2(panel_idx) ...
             *abs(z0 + 1i*sqrt(1-z0^2))^(-2*panel_order-1);
         
-        tmp3 = tmp3 + 2*pi*numerator3(panel_idx) ...
+        tmp3 = tmp3 + 2*pi*numerator3 ...
             *abs(z0 + 1i*sqrt(1-z0^2))^(-2*panel_order-1);
     end
-    errest(idx) = abs(1/(1i*pi)*tmp1) + abs(-1/(2*pi)*conj(tmp2)) ...
-        + abs(-1/(2*pi)*conj(tmp3));
+    errest(idx) = abs(tmp1) + abs(tmp2) ...
+        + abs(tmp3);
 end
 end

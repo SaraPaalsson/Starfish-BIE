@@ -3,7 +3,7 @@ function dom  = main_init(res_interf,res_domain,interf_param,typeplot)
 % Set number of panels on interface
 switch res_interf
     case 'low'
-        Npanels = 50;
+        Npanels = 35;
     case 'high'
         Npanels = 100;
     case 'superlow'
@@ -87,8 +87,8 @@ switch typeplot
             case 'high'
                 nbrP = 2000;
         end
-        reld = linspace(0,0.999,nbrP)';
-        z = zDrops(1)*reld;
+        reld = linspace(0.5,0.99,nbrP)';
+        z = zDrops(end-20)*reld;
         zplot = z;
                 
         dom = struct('z',z,'zplot',zplot,'zDrops',zDrops,'wDrops',wDrops,...

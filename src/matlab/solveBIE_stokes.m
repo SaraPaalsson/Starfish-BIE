@@ -11,7 +11,7 @@ compErrorEst = 0;
 res_interf = 'low'; %superlow,low, high
 res_domain = 'low'; %superlow, verylow, low, high
 interf_param = 'starfish'; %'circle','starfish','ellipse'
-typeplot = 'filledplot'; %'filledplot','lineplot'
+typeplot = 'lineplot'; %'filledplot','lineplot'
 
 res = struct(); %result struct
 savePlots = 0; %if save plots
@@ -114,10 +114,10 @@ res.error = error;
 compErrorEst = 1
 if compErrorEst
     disp('Compute estimates')
-    rho1 = mu_stokes;
+    rho1 = 1/(1i*pi)*mu_stokes;
     ntz = -1i*dom.taup(dom.tpar)./abs(dom.taup(dom.tpar));
-    rho2 = mu_stokes.*conj(ntz).^2;
-    rho3 = mu_stokes; %Or should this be mu_stokes*conj(tau-z)?
+    rho2 = -1/(2*pi)*mu_stokes.*conj(ntz).^2;
+    rho3 = -1/(2*pi)*mu_stokes; %Or should this be mu_stokes*conj(tau-z)?
     
     % Compute error estimate on grid
     errest = error_estL_stokes(dom.z,dom.tau(dom.panels),dom.zDrops,dom.Npanels, ...
@@ -128,30 +128,41 @@ if compErrorEst
     res.errest = errest;
 end
 
-levels = -15:3:-3;
-figure(1);
-clf
-contourf(real(dom.zplot),imag(dom.zplot),log10(error{1}),levels,'EdgeColor','none')
-shading flat
-colormap parula
-c = colorbar;
-ylabel(c,'$\log_{10}$ rel. error','FontSize',13,'Interpreter','latex')
-set(gca,'yaxislocation','right');
-set(gca,'YTicklabel',[])
-set(gca,'XTicklabel',[])
-hold on
-plot(real(dom.tau(tplot)), imag(dom.tau(tplot)),'k')
-plot(real(dom.zDrops),imag(dom.zDrops),'.k','MarkerSize',3)
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-axis equal
-axis([0.5 1.3 0 0.5])
-caxis([-15 0])
-box on
+if strcmp(typeplot,'filledplot')
+    levels = -15:3:-3;
+    figure(1);
+    clf
+    contourf(real(dom.zplot),imag(dom.zplot),log10(error{1}),levels,'EdgeColor','none')
+    shading flat
+    colormap parula
+    c = colorbar;
+    ylabel(c,'$\log_{10}$ rel. error','FontSize',13,'Interpreter','latex')
+    set(gca,'yaxislocation','right');
+    set(gca,'YTicklabel',[])
+    set(gca,'XTicklabel',[])
+    hold on
+    plot(real(dom.tau(dom.tpar)), imag(dom.tau(dom.tpar)),'k')
+    plot(real(dom.zDrops),imag(dom.zDrops),'.k','MarkerSize',3)
+    set(gca,'xtick',[])
+    set(gca,'ytick',[])
+    axis equal
+    % axis([0.5 1.3 0 0.5])
+    caxis([-15 0])
+    box on
+    
+    %Add estimate
+    errestshape = reshape(errest,size(error{1}));
+    contour(real(dom.zplot),imag(dom.zplot),log10(errestshape),levels,'k','linewidth',2)
+else
+   figure(1); clf
+   subplot(121);
+   plot(dom.zDrops,'k'); hold on; plot(dom.z,'r*')
+   subplot(122);
+   loglog(1-dom.reld,(error{1})); hold on; grid on
+   loglog(1-dom.reld,errest,'k--')
+end
+   
 
-%Add estimate
-errestshape = reshape(errest,size(error{1}));
-contour(real(dom.zplot),imag(dom.zplot),log10(errestshape),levels,'k','linewidth',2)
 
 %%
 %----------------------------------------------------
