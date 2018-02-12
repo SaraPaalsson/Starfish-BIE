@@ -3,7 +3,7 @@ function dom  = main_init(res_interf,res_domain,interf_param,typeplot)
 % Set number of panels on interface
 switch res_interf
     case 'low'
-        Npanels = 35;
+        Npanels = 50;
     case 'high'
         Npanels = 100;
     case 'superlow'
@@ -16,7 +16,8 @@ N = Npanels*16;
 % Create parametrization
 switch interf_param
     case 'starfish'
-        s = pi/5;
+%         s = pi/5;
+        s = 0;
         tau = @(t) (1+0.3*cos(5*(t+s))).*exp(1i*(t+s)); %starfish parametrization
         taup = @(t) (-1.5*sin(5*(t+s))+1i*(1+0.3*cos(5*(t+s)))).*exp(1i*(t+s));
         taupp = @(t) exp(1i*(t+s)).*(-1-7.8*cos(5*(t+s))-(3i)*sin(5*(t+s)));
@@ -67,6 +68,8 @@ switch typeplot
         r = [r1 r2]';
 
         t = linspace(0,2*pi,nbrT)';
+%         t = linspace(0,pi/2,nbrT)';
+        
 %         t = linspace(0,2*pi,nbrT+1)'; t = t(1:end-1);
         [Rplot,Tplot] = meshgrid(r,t);
         z = Rplot(:).*tau(Tplot(:));
@@ -88,7 +91,11 @@ switch typeplot
                 nbrP = 2000;
         end
         reld = linspace(0.5,0.99,nbrP)';
-        z = zDrops(end-20)*reld;
+        
+        
+        z = zDrops(end-50)*reld;
+        
+        
         zplot = z;
                 
         dom = struct('z',z,'zplot',zplot,'zDrops',zDrops,'wDrops',wDrops,...
