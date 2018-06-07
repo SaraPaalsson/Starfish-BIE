@@ -7,7 +7,7 @@ switch res_interf
     case 'high'
         Npanels = 100;
     case 'superlow'
-        Npanels = 10;
+        Npanels = 25;
     case 'superhigh'
         Npanels = 160;
 end
@@ -18,9 +18,12 @@ switch interf_param
     case 'starfish'
 %         s = pi/5;
         s = 0;
-        tau = @(t) (1+0.3*cos(5*(t+s))).*exp(1i*(t+s)); %starfish parametrization
-        taup = @(t) (-1.5*sin(5*(t+s))+1i*(1+0.3*cos(5*(t+s)))).*exp(1i*(t+s));
-        taupp = @(t) exp(1i*(t+s)).*(-1-7.8*cos(5*(t+s))-(3i)*sin(5*(t+s)));
+%         a = 0.225;
+        a = 0.3;
+        b = 5;
+        tau = @(t) (1+a*cos(b*(t+s))).*exp(1i*(t+s)); %starfish parametrization
+        taup = @(t) (-a*b*sin(b*(t+s))+1i*(1+a*cos(b*(t+s)))).*exp(1i*(t+s));
+        taupp = @(t) exp(1i*(t+s)).*(-1+(-a*b^2-a)*cos(b*(t+s))-2*a*b*1i*sin(b*(t+s)));
     case 'circle'
         r = 2;
         tau = @(t) r*(cos(t) + 1i*sin(t));
@@ -62,14 +65,14 @@ switch typeplot
         
         % Where to go from coarse to fine grid
         R1 = 0.4;
-        r1 = linspace(0,R1,5);
+        r1 = linspace(0,R1,20); %5
         
         r2 = linspace(R1, 0.999,nbrR); r2  = r2(2:end);
         r = [r1 r2]';
-
+                
         t = linspace(0,2*pi,nbrT)';
-%         t = linspace(0,pi/2,nbrT)';
-        
+%         t = t(t <= pi/2);
+
 %         t = linspace(0,2*pi,nbrT+1)'; t = t(1:end-1);
         [Rplot,Tplot] = meshgrid(r,t);
         z = Rplot(:).*tau(Tplot(:));

@@ -3,9 +3,11 @@ function stokes_solveBIE(varargin)
 
 % === Set default input values.
 compEst = 1;
-doSpec = 0;
+doSpec = 1;
 saveData = 1;
 loadPrecom = 0;
+preComFile = '';
+fileOut = 'tmp';
 for j=1:nargin
     switch j
         case 1
@@ -24,6 +26,14 @@ for j=1:nargin
             if ~isempty(varargin{j})
                 loadPrecom = varargin{j};
             end
+        case 5
+            if ~isempty(varargin{j})    
+                preComFile = varargin{j};
+            end
+        case 6
+            if ~isempty(varargin{j})
+                fileOut = varargin{j};
+            end
     end
 end
 
@@ -31,7 +41,7 @@ end
 addpath('../mex')
 
 % ----------------- Set parameters ----------------------------
-res_interf = 'low'; %superlow,low, high
+res_interf = 'superlow'; %superlow,low, high
 res_dom = 'low'; %superlow, verylow, low, high
 interf_param = 'starfish'; %'circle','starfish','ellipse'
 typeplot = 'filledplot';
@@ -48,10 +58,12 @@ if ~loadPrecom
     % Define boundary condition
     
     % BC caused by point source located at x0 with strength m
-    x0(1,1) = 2 + 3i;
+    x0(1,1) = 1.1 + 1.3i;
     f0(1,1) = 4*pi + 4*pi*1i;
     x0(2,1) = -1.4 - 1.3i;
-    f0(2,1) = pi - 2*pi*1i;
+    f0(2,1) = pi/ - 2*pi*1i;
+    x0(3,1) = 1.3-0.75i;
+    f0(3,1) = -0.5*pi+3.5*pi*1i;
     % % Sum all stokeslets for rhs.
     RHS = @(x) comprhs_stokes(x,x0,f0);
     res.RHS = RHS;
@@ -122,15 +134,21 @@ if ~loadPrecom
     
     if saveData
        disp(['Save data to: results/stokes_D' res_dom '_I' res_interf])
-       save(['results/stokes_D' res_dom '_Inps' num2str(dom.Npanels)]); 
+%        save(['results/stokes_D' res_dom '_Inps' num2str(dom.Npanels)]);
+        save(['results/' fileOut '_D' res_dom '_Inps' num2str(dom.Npanels)]);
     end
 
     
 else
     % === Load precomputed resultfiles
-    load(['results/stokes_D' res_dom '_I' res_interf])
+    load(['results/' preComFile])
+%     load(['results/stokes_D' res_dom '_I' res_interf])
     disp(['Using precomputed values from file: results/stokes_D' res_dom '_I' res_interf])
+
+    disp(['Compute estimates: ' num2str(compEst)])
+    disp(['Compute special quadrature: ' num2str(doSpec)])
 end
+
 
 
 % === Plot
@@ -147,22 +165,36 @@ cmap = cmap( idx, :);
 colormap(cmap);
 
 cbar = colorbar();
-set(cbar, 'Ticks', levels)
-ylabel(cbar,'$\log_{10}$ error','FontSize',20,'interpreter','latex')
+set(cbar, 'Ticks', levels,'FontSize',15)
+ylabel(cbar,'$\log_{10}$ error','FontSize',25,'interpreter','latex')
 shading interp
 caxis([min(levels), max(levels)])
 hold on
 if compEst
-    title('Error and estimate - Stokes equation with standard GL quadrature')
+%     title('Error and estimate - Stokes equation with standard GL quadrature')
     contour(real(res.dom.zplot), imag(res.dom.zplot), log10(abs(res.error{1})), levels(2:end), 'k')
 else
-    title('Error - Stokes equation with standard GL quadrature')
+%     title('Error - Stokes equation with standard GL quadrature')
 end
-plot(complex([res.dom.zDrops; res.dom.zDrops(1)]), '.-k')
+plot(complex([res.dom.zDrops; res.dom.zDrops(1)]), '-k','LineWidth',2)
 axis equal
-axis([-1.4 1.4 -1.4 1.4])
 box on
+
+axis([0 1.35 0 1.35])
+
 set(gca,'Visible','off')
+
+% % % Make box
+xmin = 0.35; xmax = 1.35;
+ymin = 0; ymax = 0.5;
+% Plot box
+plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
+plot([xmin xmax],[ymax ymax],'k-','LineWidth',2)
+plot([xmin xmin],[ymin ymax],'k-','LineWidth',2)
+plot([xmax xmax],[ymin ymax],'k-','LineWidth',2)
+% % Cut box
+% axis([xmin xmax ymin ymax])
+
 
 if doSpec
     figure(2)
@@ -170,15 +202,38 @@ if doSpec
     pcolor(real(res.dom.zplot), imag(res.dom.zplot), log10(res.error{2}));
     title('Error - Stokes equation with special quadrature')
     cbar = colorbar();
-    set(cbar, 'Ticks', levels)
+    set(cbar, 'Ticks', levels,'FontSize',15)
     shading interp
+    ylabel(cbar,'$\log_{10}$ error','FontSize',25,'interpreter','latex')
+
+    num_levels = 7;
+    levels = linspace(-14, 0, num_levels+1);
+%     colormap('default');
+    cmap = colormap();
+    idx = round(linspace(1, size(cmap,1), num_levels));
+    cmap = cmap( idx, :);
+    colormap(cmap);
+
+    
     caxis([min(levels), max(levels)])
     hold on
-    plot(complex(res.dom.zDrops), '.-k')
+    plot(complex(res.dom.zDrops), '.-k','LineWidth',2,'MarkerSize',10)
     axis equal
-    axis([0 1.5 0 1.5])
+%     axis([0 1.5 0 1.5])
+    axis([-1.2 1.4 -1.4 1.4])
     box on
     set(gca,'Visible','Off')
+    
+    % % Make box
+    xmin = 0.2; xmax = 1.35;
+    ymin = 0; ymax = 1.3;
+    % % Plot box
+    plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
+    plot([xmin xmax],[ymax ymax],'k-','LineWidth',2)
+    plot([xmin xmin],[ymin ymax],'k-','LineWidth',2)
+    plot([xmax xmax],[ymin ymax],'k-','LineWidth',2)
+    % Cut box
+%     axis([xmin xmax ymin ymax])
 end
 
 figure(3); 
@@ -187,11 +242,21 @@ uknown = reshape(res.uknown,size(res.dom.zplot));
 pcolor(real(res.dom.zplot), imag(res.dom.zplot), abs(uknown));
 shading flat; hold on; axis equal
 colormap('default');
-plot(complex([res.dom.zDrops; res.dom.zDrops(1)]), '.-k')
-axis([-1.4 1.4 -1.4 1.4])
+plot(complex([res.dom.zDrops; res.dom.zDrops(1)]), '-k','LineWidth',2)
+% Plot point sources
+plot(x0(1),'k.','MarkerSize',35)
+plot(x0(2),'k.','MarkerSize',35)
+plot(x0(3),'k.','MarkerSize',35)
+axis([-2 2 -2 2])
+box on
+xlabel('$\Re(z)$','FontSize',25)
+ylabel('$\Im(z)$','FontSize',25)
+set(gca,'FontSize',20)
 h = colorbar;
-ylabel(h,'$\mathbf{u}$','interpreter','latex','FontSize',20,'Rotation',0);
-set(gca,'Visible','Off')
+set(h,'FontSize',15)
+ylabel(h,'$|u|$','interpreter','latex','FontSize',25,'Rotation',0);
+% set(gca,'Visible','Off')
+
 
 disp('Done!')
 end

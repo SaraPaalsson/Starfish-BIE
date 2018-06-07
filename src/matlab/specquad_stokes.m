@@ -10,9 +10,27 @@ len2 = tau_panels(2:end)-tau_panels(1:end-1);
 % %For debug
 % z16 = zeros(size(z)); z32 = z16; zinter = z16;
 
+deBUGmode = 0;
+if deBUGmode
+figure(1); clf;
+plot(zDrops,'k-'); hold on; axis equal;
+end
+
 nbr_z = length(z);
 for il = 1:nbr_z %Go through all points z
+  
+if deBUGmode
+il 
+
+figure(1);
+plot(z(il),'*')
+end
+
     for k=1:Npanels
+
+if deBUGmode   
+k
+end       
         if abs(z(il)-mid2(k)) < abs(len2(k)) %Check if z too close to any panel
             tz = zeros(16,1); tzp = zeros(16,1); tW = zeros(16,1); tmu = zeros(16,1);
             nzpan = zeros(16,1);
@@ -32,8 +50,17 @@ for il = 1:nbr_z %Go through all points z
             
             tz = zDrops(indj);
             nzpan = 2*(tz-mid2(k))/len2(k);  %map all nodes on the panel to [-1,1]
-          
+            
+if deBUGmode     
+figure(3); clf;
+plot(nzpan,'k.-','MarkerSize',20);
+hold on
+plot(nzpan,0*nzpan,'r-')
 
+
+figure(3)
+plot(nz,'*')
+end
             %Check if the point nz is between the panel and the real axis
             if real(nz) > -1 && real(nz) < 1
                 if imag(nz) > 0 %above real axis, check if enclosed by axis and panel
@@ -59,6 +86,7 @@ for il = 1:nbr_z %Go through all points z
                             lg2 = lg2 + pi*1i;
 %                             lg1 = lg1 + pi*1i;
 %                             lg2 = lg2 - pi*1i;
+
                         end
                     end
                 else if imag(nz) < 0 %below the real axis, check enclosed
@@ -98,7 +126,9 @@ for il = 1:nbr_z %Go through all points z
             oldsum = sum(-1i/pi*tW.*tmu.*imag(tzp./(tz-z(il))) + ...
                 1i/pi*tW.*conj(tmu).*imag(tzp.*conj(tz-z(il)))./(conj(tz-z(il)).^2));
             testsum = sum(tW.*tzp./(tz-z(il)));
-            
+if deBUGmode 
+abs(p32(1)-testsum)
+end
             if abs(p32(1)-testsum) > 1e-13 %Standard 16-GL not good enough!
                 % % Interpolate to 32-point GL quadrature
                 tmu32 = IPmultR(tmu,IP1,IP2);
@@ -109,7 +139,9 @@ for il = 1:nbr_z %Go through all points z
                 tW32 = W32.*plen;
                 orig32 = tW32./(tz32-z(il));
                 o32sum = sum(tzp32.*orig32);
-                
+if deBUGmode
+abs(o32sum-p32(1))
+end
                 if abs(o32sum-p32(1)) < 1e-13 %32 GL suffices!
                     
                     
@@ -159,6 +191,15 @@ for il = 1:nbr_z %Go through all points z
             end
             
         end
+if deBUGmode
+u(il)
+u_spec(il)
+u_known(il)
+
+abs(u_known(il)-u(il))
+
+abs(u_known(il)-u_spec(il))
+end
     end
     
 end
