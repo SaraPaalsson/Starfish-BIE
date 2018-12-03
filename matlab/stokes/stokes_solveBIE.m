@@ -23,8 +23,8 @@ end
 
 % ----------------- Set parameters ----------------------------
 res_interf = 'low'; %superlow,low, high
-res_dom = 'low'; %superlow, verylow, low, high
-interf_param = 'starfish'; %'circle','starfish','ellipse'
+res_dom = 'superlow'; %superlow, verylow, low, high
+interf_param = 'corner'; %'circle','starfish','ellipse'
 typeplot = 'filledplot';
 
 if ~loadPrecom
@@ -52,8 +52,37 @@ if ~loadPrecom
     
     % ----------------- Calculate density ------------------------------------
     % Solve BIE to obtain density mu
-    mu_stokes = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
-        dom.taupp(dom.tpar),dom.wDrops,RHS);
+    
+    mu_stokes_coarse = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
+        dom.taupp(dom.tpar),dom.wDrops,RHS,[], []);
+    
+    nsub = 50;
+    if nsub >= 0
+        
+        star_indices = dom.N / 2 - 32 + 1 : dom.N / 2 + 32;
+        star_indices = [star_indices, star_indices + dom.N];
+        R = assemble_rcip_matrix(dom, nsub);
+          
+        Rhat = eye(2 * dom.N);
+        
+        Rhat(star_indices(1:64), star_indices(1:64)) = R(1:64,1:64, end);
+        Rhat(star_indices(1:64), star_indices(65 : end)) = R(1:64,65 : end, end);
+        Rhat(star_indices(65 : end), star_indices(1:64)) = R(65 : end,1:64, end);
+        Rhat(star_indices(65 : end), star_indices(65 : end)) = R(65 : end, 65 : end, end);
+        
+        mu_stokes_tilde = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
+                dom.taupp(dom.tpar),dom.wDrops,RHS, star_indices, Rhat);
+
+       mu_tmp = Rhat * [real(mu_stokes_tilde); imag(mu_stokes_tilde)];
+       mu_stokes_hat = mu_tmp(1 : end / 2) + 1i * mu_tmp(end / 2 + 1:end);
+       
+       mu_stokes = mu_stokes_hat;
+       
+    else
+        mu_stokes = mu_stokes_coarse;
+    end
+    
+    %mu_stokes = mu_stokes_coarse;
     res.mu = mu_stokes;
     
     % Calculate known solution over the domain
@@ -66,7 +95,7 @@ if ~loadPrecom
     
     
     % ----------------- Calculate u ------------------------------------------
-    % Compute u over the domain
+    % Compute u over the domain 
     % Use 16-GL when possible
     % Use special quadrature for points too close to the boundary
     evalinterf = 0; %If we compute u on interface
@@ -161,20 +190,20 @@ plot(complex([res.dom.zDrops; res.dom.zDrops(1)]), '-k','LineWidth',2)
 axis equal
 box on
 
-axis([0 1.35 0 1.35])
+%axis([-1, 1, -1, 1])
 
 set(gca,'Visible','off')
 
 % % % Make box
-xmin = 0.35; xmax = 1.35;
-ymin = 0; ymax = 0.5;
-% Plot box
-plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
-plot([xmin xmax],[ymax ymax],'k-','LineWidth',2)
-plot([xmin xmin],[ymin ymax],'k-','LineWidth',2)
-plot([xmax xmax],[ymin ymax],'k-','LineWidth',2)
-% Cut box
-axis([xmin xmax ymin ymax])
+% xmin = 0.35; xmax = 1.35;
+% ymin = 0; ymax = 0.5;
+% % Plot box
+% plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
+% plot([xmin xmax],[ymax ymax],'k-','LineWidth',2)
+% plot([xmin xmin],[ymin ymax],'k-','LineWidth',2)
+% plot([xmax xmax],[ymin ymax],'k-','LineWidth',2)
+% % Cut box
+% axis([xmin xmax ymin ymax])
 
 % set(cbar,'Visible','Off')
 
@@ -198,11 +227,12 @@ if doSpec
 
     
     caxis([min(levels), max(levels)])
+    colorbar
     hold on
     plot(complex(res.dom.zDrops), '-k','LineWidth',2,'MarkerSize',10)
     axis equal
 %     axis([0 1.5 0 1.5])
-    axis([-1.2 1.4 -1.4 1.4])
+   % axis([-1.2 1.4 -1.4 1.4])
     box on
     set(gca,'Visible','Off')
     
@@ -210,8 +240,8 @@ if doSpec
 % xmin = 0.35; xmax = 1.35;
 % ymin = 0; ymax = 0.5;
 % % % Quadrant
-xmin = 0; xmax = 1.35;
-ymin = 0; ymax = 1.25;
+% xmin = 0; xmax = 1.35;
+% ymin = 0; ymax = 1.25;
 
 %     % % Plot box
 %     plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
@@ -222,7 +252,7 @@ ymin = 0; ymax = 1.25;
 %     axis([xmin xmax ymin ymax])
 
 
-    set(cbar,'Visible','Off')
+   % set(cbar,'Visible','Off')
 
 end
 
@@ -291,7 +321,7 @@ end
 
 end
 
-function mu_stokes = mubie_stokes(N,zDrops,zpDrops,zppDrops,wDrops,RHS)
+function mu_stokes = mubie_stokes(N,zDrops,zpDrops,zppDrops,wDrops,RHS,star_indices, Rhat)
 % Calculate density mu from the boundary integral formulation for Stokes
 % eq. with Dirichlet boundary condition (RHS)
 % Singular integrals calcualted with limit points
@@ -303,7 +333,7 @@ h2 = real(r);
 h = h1 + 1i*h2;
 rhs = [real(h); imag(h)];
 
-Afunc = @(x) mubie_gmres(x,zDrops,zpDrops,zppDrops,wDrops);
+Afunc = @(x) mubie_gmres(x,zDrops,zpDrops,zppDrops,wDrops,star_indices, Rhat);
 
 w = gmres(Afunc,rhs,[],1e-13,100);
 wr = w(1:N);
