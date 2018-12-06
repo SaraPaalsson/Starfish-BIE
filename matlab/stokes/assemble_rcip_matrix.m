@@ -1,6 +1,6 @@
 function R = assemble_rcip_matrix(dom, nsub)
 
-star_indices = [17 : 80, 113 : 176];
+b_star_indices = [17 : 80, 113 : 176];
 R = zeros(128, 128, nsub + 1);
 T = Tinit16;
 W = Winit16;
@@ -20,11 +20,11 @@ for i = 0 : nsub
         R(:,:,1) =  PWbc' *((Ib + K) \ Pbc);
     else
         Kcirc = K;
-        Kcirc(star_indices, star_indices) = 0;
+        Kcirc(b_star_indices, b_star_indices) = 0;
         
         FR = Ib;        
         
-        FR(star_indices, star_indices) = inv(R(:,:,i));
+        FR(b_star_indices, b_star_indices) = inv(R(:,:,i));
         R(:,:, i + 1) = PWbc' * ((FR + Kcirc) \ Pbc);
 
     end
@@ -57,8 +57,6 @@ W=[W/2; W/4; W/4; W/4; W/4; W/2]/denom;
 z = dom.tau(s);
 zp = dom.taup(s);
 zpp = dom.taupp(s);
-
-%jac = sqrt(real(zp).^2 + imag(zp).^2);
 
 jac = W;
 
