@@ -22,8 +22,8 @@ end
    
 
 % ----------------- Set parameters ----------------------------
-res_interf = 'low'; %superlow,low, high
-res_dom = 'superlow'; %superlow, verylow, low, high
+res_interf = 'superlow'; %superlow,low, high
+res_dom = 'high'; %superlow, verylow, low, high
 interf_param = 'corner'; %'circle','starfish','ellipse'
 typeplot = 'filledplot';
 
@@ -56,19 +56,15 @@ if ~loadPrecom
     mu_stokes_coarse = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
         dom.taupp(dom.tpar),dom.wDrops,RHS,[], []);
     
-    nsub = 50;
+    nsub = 20;
     if nsub >= 0
         
         star_indices = dom.N / 2 - 32 + 1 : dom.N / 2 + 32;
         star_indices = [star_indices, star_indices + dom.N];
         R = assemble_rcip_matrix(dom, nsub);
           
-        Rhat = eye(2 * dom.N);
-        
-        Rhat(star_indices(1:64), star_indices(1:64)) = R(1:64,1:64, end);
-        Rhat(star_indices(1:64), star_indices(65 : end)) = R(1:64,65 : end, end);
-        Rhat(star_indices(65 : end), star_indices(1:64)) = R(65 : end,1:64, end);
-        Rhat(star_indices(65 : end), star_indices(65 : end)) = R(65 : end, 65 : end, end);
+        Rhat = eye(2 * dom.N);        
+        Rhat(star_indices, star_indices) = R(:, :, end);
         
         mu_stokes_tilde = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
                 dom.taupp(dom.tpar),dom.wDrops,RHS, star_indices, Rhat);
@@ -76,13 +72,14 @@ if ~loadPrecom
        mu_tmp = Rhat * [real(mu_stokes_tilde); imag(mu_stokes_tilde)];
        mu_stokes_hat = mu_tmp(1 : end / 2) + 1i * mu_tmp(end / 2 + 1:end);
        
-       mu_stokes = mu_stokes_hat;
-       
+       %mu_stokes = mu_stokes_hat;
+       [mu_stokes_fine, dom_fine] = recover_fine_density(dom, R, mu_stokes_tilde, star_indices, nsub);
+       dom = dom_fine;
+       mu_stokes = mu_stokes_fine;
     else
         mu_stokes = mu_stokes_coarse;
     end
     
-    %mu_stokes = mu_stokes_coarse;
     res.mu = mu_stokes;
     
     % Calculate known solution over the domain
@@ -110,7 +107,8 @@ if ~loadPrecom
     if doSpec
         disp('Compute u special quadrature')
         tic
-        [uspec] = specquad_stokes(u, mu_stokes, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
+        
+        [uspec] = specquad_stokes(u, mu_stokes_fine, dom.Npanels, dom.tau(dom.panels), dom.zDrops, ...
             dom.taup(dom.tpar), dom.wDrops, dom.z, IP1, IP2, W16, W32,uknown);
         toc
         
