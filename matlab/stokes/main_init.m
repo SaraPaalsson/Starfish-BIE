@@ -72,7 +72,9 @@ switch typeplot
                 
         t = linspace(0,2*pi,nbrT)';
         t = t(t <= pi/2);
-
+%         t = t(t > 0.9*pi/2); t = t(t<= 1.1*3*pi/2);
+%         t = t(t> 3*pi/2);
+        
 %         t = linspace(0,2*pi,nbrT+1)'; t = t(1:end-1);
         [Rplot,Tplot] = meshgrid(r,t);
         z = Rplot(:).*tau(Tplot(:));

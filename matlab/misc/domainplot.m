@@ -80,10 +80,10 @@ xticks(xl:dt:xu)
 ylim([yl yu])
 yticks(yl:dt:yu)
 % set(gca,'GridColor','k','LineWidth',0.5,'GridAlpha',0.5)
-plot(z,'LineWidth',3); 
+plot(z,'LineWidth',2,'Color','k'); 
 
 set(gca,'Visible','Off')
-% plot(z(Ind),'k.','MarkerSize',20)
+plot(z(Ind),'k.','MarkerSize',20)
 
 %% Plot composite discretization
 

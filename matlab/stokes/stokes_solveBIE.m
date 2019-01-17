@@ -21,7 +21,7 @@ for i= 1:nargin
 end
    
 
-% ----------------- Set parameters ----------------------------
+% ----------------- Set parameters ----------------------------------------
 res_interf = 'low'; %superlow,low, high
 res_dom = 'low'; %superlow, verylow, low, high
 interf_param = 'starfish'; %'circle','starfish','ellipse'
@@ -29,13 +29,13 @@ typeplot = 'filledplot';
 
 if ~loadPrecom
     
-    res = struct(); %result struct
+    res = struct(); %Define result struct
     
-    % ----------------- Setup domain  ------------------------------
+    % ----------------- Setup domain  -------------------------------------
     [dom] = main_init(res_interf,res_dom,interf_param,typeplot);
     res.dom = dom;
     
-    % ----------------- Set up problem -----------------------------
+    % ----------------- Set up problem ------------------------------------
     % Define boundary condition
     
     % BC caused by point source located at x0 with strength m
@@ -50,7 +50,7 @@ if ~loadPrecom
     res.RHS = RHS;
     
     
-    % ----------------- Calculate density ------------------------------------
+    % ----------------- Calculate density ---------------------------------
     % Solve BIE to obtain density mu
     mu_stokes = mubie_stokes(dom.N,dom.zDrops,dom.taup(dom.tpar), ...
         dom.taupp(dom.tpar),dom.wDrops,RHS);
@@ -65,7 +65,7 @@ if ~loadPrecom
     load 'glW.mat' %read in GL 16 and 32 weights
     
     
-    % ----------------- Calculate u ------------------------------------------
+    % ----------------- Calculate u ---------------------------------------
     % Compute u over the domain
     % Use 16-GL when possible
     % Use special quadrature for points too close to the boundary
@@ -77,7 +77,7 @@ if ~loadPrecom
     toc
     res.u = u;
     
-    % === Special quadrature corrections
+    % ----------------- Compute special quadrature corrections ------------
     if doSpec
         disp('Compute u special quadrature')
         tic
@@ -88,7 +88,7 @@ if ~loadPrecom
         res.uspec = uspec;
     end
     
-    % === Compute errors and plot
+    % ----------------- Compute errors ------------------------------------
     disp('Compute  errors')
 
     relnorm = norm(uknown,Inf);
@@ -103,7 +103,7 @@ if ~loadPrecom
     error = {reshape(er,size(dom.zplot))  reshape(er_spec,size(dom.zplot))};
     res.error = error;
 
-    % Compute estimates
+    % ----------------- Compute estimates ---------------------------------
     if compEst
         disp('Compute estimates')
         tic
@@ -113,6 +113,7 @@ if ~loadPrecom
         res.errest = errest;    
     end
     
+    % ----------------- Save data -----------------------------------------
     if saveData
        disp(['Save data to: results/stokes_D' res_dom '_I' res_interf])
 %        save(['results/stokes_D' res_dom '_Inps' num2str(dom.Npanels)]);
@@ -121,7 +122,7 @@ if ~loadPrecom
 
     
 else
-    % === Load precomputed resultfiles
+    % ----------------- Load precomputed files ----------------------------
     load(['results/' preComFile])
 %     load(['results/stokes_D' res_dom '_I' res_interf])
     disp(['Using precomputed values from file: results/stokes_D' res_dom '_I' res_interf])
@@ -130,11 +131,9 @@ else
     disp(['Compute special quadrature: ' num2str(doSpec)])
 end
 
-
-
-% === Plot
+% ----------------- Plot --------------------------------------------------
 figure(1)
-clf
+% clf
 pcolor(real(res.dom.zplot), imag(res.dom.zplot), log10(res.error{1}));
 
 num_levels = 7;
@@ -161,26 +160,26 @@ plot(complex([res.dom.zDrops; res.dom.zDrops(1)]), '-k','LineWidth',2)
 axis equal
 box on
 
-axis([0 1.35 0 1.35])
+% axis([0 1.35 0 1.35])
 
 set(gca,'Visible','off')
-
-% % % Make box
-xmin = 0.35; xmax = 1.35;
-ymin = 0; ymax = 0.5;
-% Plot box
-plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
-plot([xmin xmax],[ymax ymax],'k-','LineWidth',2)
-plot([xmin xmin],[ymin ymax],'k-','LineWidth',2)
-plot([xmax xmax],[ymin ymax],'k-','LineWidth',2)
-% Cut box
-axis([xmin xmax ymin ymax])
+% 
+% % % % Make box
+% xmin = 0.35; xmax = 1.35;
+% ymin = 0; ymax = 0.5;
+% % Plot box
+% plot([xmin xmax],[ymin ymin],'k-','LineWidth',2)
+% plot([xmin xmax],[ymax ymax],'k-','LineWidth',2)
+% plot([xmin xmin],[ymin ymax],'k-','LineWidth',2)
+% plot([xmax xmax],[ymin ymax],'k-','LineWidth',2)
+% % Cut box
+% axis([xmin xmax ymin ymax])
 
 % set(cbar,'Visible','Off')
 
 if doSpec
-    figure(2)
-    clf
+    figure(1)
+%     clf
     pcolor(real(res.dom.zplot), imag(res.dom.zplot), log10(res.error{2}));
     title('Error - Stokes equation with special quadrature')
     cbar = colorbar();
@@ -202,7 +201,7 @@ if doSpec
     plot(complex(res.dom.zDrops), '-k','LineWidth',2,'MarkerSize',10)
     axis equal
 %     axis([0 1.5 0 1.5])
-    axis([-1.2 1.4 -1.4 1.4])
+%     axis([-1.2 1.4 -1.4 1.4])
     box on
     set(gca,'Visible','Off')
     
@@ -250,8 +249,12 @@ ylabel(h,'$|u|$','interpreter','latex','FontSize',25,'Rotation',0);
 
 disp('Done!')
 end
+% -------------------------------------------------------------------------
 
-% === Extra functions
+
+% -------------------------------------------------------------------------
+% ========== ADDITIONAL FUNCTIONS
+% -------------------------------------------------------------------------
 function u = compu_stokes(mu, z, zDrops, zpDrops, zppDrops, wDrops,evalinterf)
 % Compute the velocity field by BIE for stokes equations, for all domain
 % points z.
@@ -290,6 +293,7 @@ else
 end
 
 end
+% -------------------------------------------------------------------------
 
 function mu_stokes = mubie_stokes(N,zDrops,zpDrops,zppDrops,wDrops,RHS)
 % Calculate density mu from the boundary integral formulation for Stokes
@@ -311,6 +315,8 @@ wi = w(N+1:end);
 mu_stokes = wr + 1i*wi;
 
 end
+% -------------------------------------------------------------------------
+
 
 function RHS = comprhs_stokes(x,x0,f)
 % Compute bc for Stokes, using sum of stokeslets
@@ -334,3 +340,5 @@ for j=1:Nf
 end
 
 end
+% -------------------------------------------------------------------------
+
