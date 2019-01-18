@@ -41,7 +41,7 @@ end
 addpath('../mex')
 
 % ----------------- Set parameters ----------------------------
-res_interf = 'superlow'; %superlow,low, high
+res_interf = 'low'; %superlow,low, high
 res_dom = 'low'; %superlow, verylow, low, high
 interf_param = 'starfish'; %'circle','starfish','ellipse'
 typeplot = 'filledplot';
