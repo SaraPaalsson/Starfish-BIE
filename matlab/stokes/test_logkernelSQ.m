@@ -5,12 +5,8 @@ function Disc = test_logkernelSQ()
 
 % Try to compute Lmod and compare with Rikard's:
 L = compute_Lmod();
-load('LmodFull.mat');
-L 
-Lmod
-for j=1:24
-norm(L(j,:)-Lmod(j,:),inf)
-end
+
+L
 
 % % % Set parameters
 % % Disc.Npanels = 4;
@@ -47,6 +43,25 @@ end
 
 
 
+function W = Wlogmat(tt)
+npt = length(tt);
+V = fliplr(vander(tt));
+p = zeros(npt+1,1);
+q = zeros(npt,1);
+c = (1-(-1).^(1:npt))./(1:npt);
+W = zeros(npt);
+for j = 1:npt
+    p(1) = log(abs((1-tt(j))/(1+tt(j))));
+    for k=1:npt
+        p(k+1) = tt(j)*p(k)+c(k);
+    end
+    q(1:2:npt-1) = log(abs(1-tt(j)^2))-p(2:2:npt);
+    q(2:2:npt) = p(1)-p(3:2:npt +1);
+    q = q./(1:npt)';
+    wqj = (V')\q;
+    W(j,:) = wqj';    
+end
+end
 
 
 function L = compute_Lmod()
@@ -60,25 +75,27 @@ tau1 = -1;
 tau2 = 1;
 mid = (tau2+tau1)/2;
 len = tau2-tau1;
-% Take four points on each side:
-[z1,~] = gaussleg(16,[-3 -1]);
-[z2,~] = gaussleg(16,[1 3]);
-ztar = [z1(end-3:end); zsrc; z2(1:4)]
 
-pv = (0:15);
-V = zsrc.^pv; % Vandermonde matrix
+W = Wlogmat(zsrc)
 
-L = zeros(24,16);
+% Assign target points
+[z1,~] = gaussleg(16,[-3 -1]); %left panel
+[z2,~] = gaussleg(16,[1 3]); %right panel
+% ztar = [z1(end-3:end); zsrc; z2(1:4)]
+
+ztar = zsrc;
+
+L = zeros(length(ztar),16);
 
 for j=1:length(ztar) % Go through all points and compute wv
     % Assign target point
     z = ztar(j);
     nz = 2*(z-mid)/len;
-   
-
-    lg1 = log(1-nz);
-    lg2 = log(-1-nz);
+         
+    lg1 = log(abs(1-nz));
+    lg2 = log(abs(1+nz));
     
+
     % Compute p0 analytically. NB p0 corresponds to p(1)
     p = zeros(17,1); 
     p(1) = lg1-lg2;
@@ -91,17 +108,28 @@ for j=1:length(ztar) % Go through all points and compute wv
         p(k) = nz*p(k-1) + (1-(-1)^(k-1))/(k-1);
         
         % Update r_{k-1}
-        r(k-1) = (lg1 - (-1)^k*lg2-p(k))/k + log(gamma)*(1-(-1)^k)/k;
-        
+        r(k-1) = 1/(k-1)*(lg1-(-1)^(k-1)*lg2-p(k));
         
     end
     
-%     wv = (V.')\imag(r);
-    wv = vandernewton(zsrc,imag(r),16);
+    wv = vandernewton(zsrc,r,16);
     
     L(j,:) = wv.';
 end
 
+
+fprintf('Difference between L (mine) and W (AK): %e \n',norm(L-W,inf))
+
+load('LmodFull.mat');
+Lmod2 = Lmod(5:end-4,:);
+fprintf('Difference between L (mine) and Lmod (Rikard): %e \n',norm(L-Lmod2,inf))
+
+disp('L:')
+L
+disp('');
+disp('Lmod2:')
+Lmod2
+disp('');
 
 end
 
@@ -122,23 +150,6 @@ for k=n-1:-1:1
     end
 end
 end
-
-function [a] = vandernewtonT(T,b,n)
-x = T;
-c = b;
-for k=1:n-1
-    for i=n:-1:k+1
-        c(i) = (c(i)-c(i-1))/(x(i)-x(i-k));
-    end
-end
-a = c;
-for k=n-1:-1:1
-    for i=k:n-1
-        a(i) = a(i)-x(k)*a(i+1);
-    end
-end
-end
-
 
 function usq = compute_SQ(Disc)
 % Computes onsurface SQ. This should be changed into 
