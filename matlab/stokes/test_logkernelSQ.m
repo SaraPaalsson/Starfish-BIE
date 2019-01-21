@@ -69,7 +69,7 @@ function L = compute_Lmod()
 % points as targets
 
 % Discretise panel
-[zsrc,~] = gaussleg(16,[-1 1]); % Create nodes and weights on the straight panel
+[zsrc,worig] = gaussleg(16,[-1 1]); % Create nodes and weights on the straight panel
 % This panel goes between the points
 tau1 = -1; 
 tau2 = 1;
@@ -113,6 +113,10 @@ for j=1:length(ztar) % Go through all points and compute wv
     end
     
     wv = vandernewton(zsrc,r,16);
+    wv = wv./worig;
+    
+    tmp = ~(zsrc==ztar(j));
+    wv(tmp) = wv(tmp) - log(abs(zsrc(tmp)-ztar(j)));
     
     L(j,:) = wv.';
 end
@@ -124,12 +128,12 @@ load('LmodFull.mat');
 Lmod2 = Lmod(5:end-4,:);
 fprintf('Difference between L (mine) and Lmod (Rikard): %e \n',norm(L-Lmod2,inf))
 
-disp('L:')
-L
-disp('');
-disp('Lmod2:')
-Lmod2
-disp('');
+% disp('L:')
+% L
+% disp('');
+% disp('Lmod2:')
+% Lmod2
+% disp('');
 
 end
 
