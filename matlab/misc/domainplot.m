@@ -25,31 +25,31 @@ hold on; axis equal
 ylim([-1.9 1.9])
 set(gca,'Visible','Off')
 
-% % Plot tangential vector on omega 1 (z3)
-% ind = 21;
-% q = quiver(real(z(ind)),imag(z(ind)),real(zp(ind)),imag(zp(ind)));
-% q.Color = 'black';
-% q.LineWidth = 1.5;
-% q.MaxHeadSize = 1;
-% q.AutoScaleFactor = 0.7;
-% str = '$\mathbf{s}$';
-% t = text(0.7,1.25,str);
-% set(t,'interpreter','latex','FontSize',20)
-% 
-% % Plot normal vector
-% n = -1i*zp;
-% q = quiver(real(z(ind)),imag(z(ind)),real(n(ind)),imag(n(ind)));
-% q.Color = 'black';
-% q.LineWidth = 1.5;
-% q.MaxHeadSize = 1;
-% q.AutoScaleFactor = 0.7;
-% str = '$\mathbf{n}$';
-% t = text(0.1,0.95,str);
-% set(t,'interpreter','latex','FontSize',20)
+% Plot tangential vector on omega 1 (z3)
+ind = 21;
+q = quiver(real(z(ind)),imag(z(ind)),real(-zp(ind)),imag(-zp(ind)));
+q.Color = 'black';
+q.LineWidth = 1.5;
+q.MaxHeadSize = 1;
+q.AutoScaleFactor = 0.7;
+str = '$\mathbf{s}$';
+t = text(0.7,1.25,str);
+set(t,'interpreter','latex','FontSize',20)
 
-% str = '$\mathbf{\Omega_0}$';
-% t = text(1.5,-1.5,str);
-% set(t,'interpreter','latex','FontSize',20)
+% Plot normal vector
+n = -1i*zp;
+q = quiver(real(z(ind)),imag(z(ind)),real(-n(ind)),imag(-n(ind)));
+q.Color = 'black';
+q.LineWidth = 1.5;
+q.MaxHeadSize = 1;
+q.AutoScaleFactor = 0.7;
+str = '$\mathbf{n}$';
+t = text(0.1,0.95,str);
+set(t,'interpreter','latex','FontSize',20)
+
+str = '$\mathbf{\Omega_0}$';
+t = text(1.5,-1.5,str);
+set(t,'interpreter','latex','FontSize',20)
 
 
 str = '$\mathbf{\Omega}$';

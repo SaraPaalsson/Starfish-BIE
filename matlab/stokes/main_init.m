@@ -7,7 +7,7 @@ switch res_interf
     case 'high'
         Npanels = 100;
     case 'superlow'
-        Npanels = 25;
+        Npanels = 10;
     case 'superhigh'
         Npanels = 160;
 end
@@ -25,7 +25,7 @@ switch interf_param
         taup = @(t) (-a*b*sin(b*(t+s))+1i*(1+a*cos(b*(t+s)))).*exp(1i*(t+s));
         taupp = @(t) exp(1i*(t+s)).*(-1+(-a*b^2-a)*cos(b*(t+s))-2*a*b*1i*sin(b*(t+s)));
     case 'circle'
-        r = 2;
+        r = 1;
         tau = @(t) r*(cos(t) + 1i*sin(t));
         taup = @(t) r*(-sin(t) + 1i*cos(t));
         taupp = @(t) r*(-cos(t) - 1i*sin(t));
@@ -71,7 +71,7 @@ switch typeplot
         r = [r1 r2]';
                 
         t = linspace(0,2*pi,nbrT)';
-        t = t(t <= pi/2);
+%         t = t(t <= pi/2);
 %         t = t(t > 0.9*pi/2); t = t(t<= 1.1*3*pi/2);
 %         t = t(t> 3*pi/2);
         
