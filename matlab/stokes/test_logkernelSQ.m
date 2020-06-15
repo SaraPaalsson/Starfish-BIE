@@ -3,58 +3,157 @@ function Disc = test_logkernelSQ()
 %
 % Integral to compute is I = Im( Int( f(tau)*log(tau-z) dtau ).
 
-% Set parameters
-Disc.Npanels = 4;
-Disc.N = Disc.Npanels*16;
-Disc.Param.interfparam = 'circle';
+% Try to compute Lmod and compare with Rikard's:
+L = compute_Lmod();
 
-% Initialise discretisations
-[Disc, ~] = init(Disc);
+L
 
-% figure(1); clf
-% plot(Disc.z); hold on; axis equal;
-% % plot(Dom.z+1i*eps,'*');
-% quiver(real(Disc.z),imag(Disc.z),real(Disc.zp),imag(Disc.zp));
-
-% Define function f
-Disc.f = ones(Disc.N,1)*(1+1i)/10;
-
-% Compute the integral I for z on boundary 
-Disc.u  = compute_Ibndry(Disc);
-
-figure(2); clf
-plot(Disc.tpar,real(Disc.u)); 
-hold on; 
-plot(Disc.tpar,imag(Disc.u),'-.')
-
-% Apply special quadrature for u on boundary
-usq = compute_SQ(Disc);
-
-plot(Disc.tpar,real(usq)); 
-hold on; 
-plot(Disc.tpar,imag(usq),'-.')
-
+% % % Set parameters
+% % Disc.Npanels = 4;
+% % Disc.N = Disc.Npanels*16;
+% % Disc.Param.interfparam = 'circle';
+% % 
+% % % Initialise discretisations
+% % [Disc, ~] = init(Disc);
+% % 
+% % % figure(1); clf
+% % % plot(Disc.z); hold on; axis equal;
+% % % % plot(Dom.z+1i*eps,'*');
+% % % quiver(real(Disc.z),imag(Disc.z),real(Disc.zp),imag(Disc.zp));
+% % 
+% % % Define function f
+% % Disc.f = ones(Disc.N,1)*(1+1i)/10;
+% % 
+% % % Compute the integral I for z on boundary 
+% % Disc.u  = compute_Ibndry(Disc);
+% % % 
+% % % figure(2); clf
+% % % plot(Disc.tpar,real(Disc.u)); 
+% % % hold on; 
+% % % plot(Disc.tpar,imag(Disc.u),'-.')
+% % 
+% % % % Apply special quadrature for u on boundary
+% % % usq = compute_SQ(Disc);
+% % % 
+% % % plot(Disc.tpar,real(usq)); 
+% % % hold on; 
+% % % plot(Disc.tpar,imag(usq),'-.')
 
 end
 
 
-function L = compute_Lmod(zsrc,ztar)
-% Compute SQ corrections for all points ztar from panel with points zsrc
 
-Ntar = length(ztar);
+function W = Wlogmat(tt)
+npt = length(tt);
+V = fliplr(vander(tt));
+p = zeros(npt+1,1);
+q = zeros(npt,1);
+c = (1-(-1).^(1:npt))./(1:npt);
+W = zeros(npt);
+for j = 1:npt
+    p(1) = log(abs((1-tt(j))/(1+tt(j))));
+    for k=1:npt
+        p(k+1) = tt(j)*p(k)+c(k);
+    end
+    q(1:2:npt-1) = log(abs(1-tt(j)^2))-p(2:2:npt);
+    q(2:2:npt) = p(1)-p(3:2:npt +1);
+    q = q./(1:npt)';
+    wqj = (V')\q;
+    W(j,:) = wqj';    
+end
+end
 
-pidx = (0:15);
-V = ztar.^pidx;
 
-for j=1:Ntar
+function L = compute_Lmod()
+% Compute Lmod matrix for a straight panel of 16 G-L points with the panel
+% points as targets
+
+% Discretise panel
+[zsrc,worig] = gaussleg(16,[-1 1]); % Create nodes and weights on the straight panel
+% This panel goes between the points
+tau1 = -1; 
+tau2 = 1;
+mid = (tau2+tau1)/2;
+len = tau2-tau1;
+
+W = Wlogmat(zsrc)
+
+% Assign target points
+[z1,~] = gaussleg(16,[-3 -1]); %left panel
+[z2,~] = gaussleg(16,[1 3]); %right panel
+% ztar = [z1(end-3:end); zsrc; z2(1:4)]
+
+ztar = zsrc;
+
+L = zeros(length(ztar),16);
+
+for j=1:length(ztar) % Go through all points and compute wv
+    % Assign target point
+    z = ztar(j);
+    nz = 2*(z-mid)/len;
+         
+    lg1 = log(abs(1-nz));
+    lg2 = log(abs(1+nz));
     
+
+    % Compute p0 analytically. NB p0 corresponds to p(1)
+    p = zeros(17,1); 
+    p(1) = lg1-lg2;
     
+    % Compute p and r recursively
+    r = zeros(16,1);
+    gamma = len/2;
+    for k = 2:17
+        % Update p_k
+        p(k) = nz*p(k-1) + (1-(-1)^(k-1))/(k-1);
+        
+        % Update r_{k-1}
+        r(k-1) = 1/(k-1)*(lg1-(-1)^(k-1)*lg2-p(k));
+        
+    end
+    
+    wv = vandernewton(zsrc,r,16);
+    wv = wv./worig;
+    
+    tmp = ~(zsrc==ztar(j));
+    wv(tmp) = wv(tmp) - log(abs(zsrc(tmp)-ztar(j)));
+    
+    L(j,:) = wv.';
 end
 
 
+fprintf('Difference between L (mine) and W (AK): %e \n',norm(L-W,inf))
+
+load('LmodFull.mat');
+Lmod2 = Lmod(5:end-4,:);
+fprintf('Difference between L (mine) and Lmod (Rikard): %e \n',norm(L-Lmod2,inf))
+
+% disp('L:')
+% L
+% disp('');
+% disp('Lmod2:')
+% Lmod2
+% disp('');
+
 end
 
+function b = vandernewton(T,b,n)
 
+for k=1:n-1
+    for i=n:-1:k+1
+        b(i) = b(i) - T(k)*b(i-1);
+    end
+end
+
+for k=n-1:-1:1
+    for i=k+1:n
+        b(i) = b(i)/(T(i)-T(i-k));
+    end
+    for i=k:n-1
+        b(i) = b(i) - b(i+1);
+    end
+end
+end
 
 function usq = compute_SQ(Disc)
 % Computes onsurface SQ. This should be changed into 
@@ -72,7 +171,7 @@ for k=1:Disc.Npanels
     idx = Disc.idx(1,1)+mod((k-1)*16+(-3:20)+Disc.Npanels*16-1,Disc.Npanels*16);
     idx2 = Disc.idx(1,1)-1+((k-1)*16+(1:16));
     
-    Lmodtest = compute_Lmod(Disc.z(idx2),Disc.z(idx));
+    Lmodtest = compute_Lmod(Disc.z(idx2),Disc.z(idx),Disc,k);
     
     usq(idx) = usq(idx) - Lmod*(Disc.f(idx2).*wazp(idx2));
 end
